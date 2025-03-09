@@ -3531,7 +3531,6 @@ function Library:CreateWindow(...)
         local FadeTime = Config.MenuFadeTime;
         Fading = true;
         Toggled = (not Toggled);
-        ModalElement.Modal = Toggled;
 
         for _, Desc in next, Outer:GetDescendants() do
             local Properties = {};
