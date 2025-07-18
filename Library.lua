@@ -2635,37 +2635,65 @@ do
 
     function Funcs:AddLabel(...)
         local Data = {}
-
+    
         local First = select(1, ...)
         local Second = select(2, ...)
-
+    
         if typeof(First) == "table" or typeof(Second) == "table" then
             local Params = typeof(First) == "table" and First or Second
-
+    
             Data.Text = Params.Text or ""
             Data.DoesWrap = Params.DoesWrap or false
             Data.Size = Params.Size or 14
             Data.Visible = Params.Visible or true
             Data.Idx = typeof(Second) == "table" and First or nil
+            
+            -- Column-related parameters
+            Data.ColumnCount = Params.ColumnCount or 2
+            Data.ColumnSpacing = Params.ColumnSpacing or 4
+            Data.ColumnHeaders = Params.ColumnHeaders or nil
+            Data.ColumnWidthMode = Params.ColumnWidthMode or "auto" -- "auto", "equal", "custom"
+            Data.ColumnAlignment = Params.ColumnAlignment or "left" -- "left", "center", "right"
+            Data.ColumnSeparator = Params.ColumnSeparator or " | "
+            Data.ColumnWidths = Params.ColumnWidths or nil
+            Data.UseColumns = Params.UseColumns or false
         else
             Data.Text = First or ""
             Data.DoesWrap = Second or false
             Data.Size = 14
             Data.Visible = true
             Data.Idx = select(3, ...) or nil
+            
+            -- Default column settings
+            Data.ColumnCount = 2
+            Data.ColumnSpacing = 4
+            Data.ColumnHeaders = nil
+            Data.ColumnWidthMode = "auto"
+            Data.ColumnAlignment = "left"
+            Data.ColumnSeparator = " | "
+            Data.ColumnWidths = nil
+            Data.UseColumns = false
         end
-
+    
         local Groupbox = self
         local Container = Groupbox.Container
-
+    
         local Label = {
             Text = Data.Text,
             DoesWrap = Data.DoesWrap,
-
             Visible = Data.Visible,
             Type = "Label",
+            -- Column properties
+            ColumnCount = Data.ColumnCount,
+            ColumnSpacing = Data.ColumnSpacing,
+            ColumnHeaders = Data.ColumnHeaders,
+            ColumnWidthMode = Data.ColumnWidthMode,
+            ColumnAlignment = Data.ColumnAlignment,
+            ColumnSeparator = Data.ColumnSeparator,
+            ColumnWidths = Data.ColumnWidths,
+            UseColumns = Data.UseColumns,
         }
-
+    
         local TextLabel = New("TextLabel", {
             BackgroundTransparency = 1,
             Size = UDim2.new(1, 0, 0, 18),
@@ -2675,27 +2703,228 @@ do
             TextXAlignment = Groupbox.IsKeyTab and Enum.TextXAlignment.Center or Enum.TextXAlignment.Left,
             Parent = Container,
         })
-
+    
+        -- Helper function to pad text to specific width
+        local function PadText(text, width, alignment)
+            local str = tostring(text)
+            if #str >= width then
+                return str:sub(1, width)
+            end
+            
+            local padding = width - #str
+            if alignment == "center" then
+                local leftPad = math.floor(padding / 2)
+                local rightPad = padding - leftPad
+                return string.rep(" ", leftPad) .. str .. string.rep(" ", rightPad)
+            elseif alignment == "right" then
+                return string.rep(" ", padding) .. str
+            else -- left alignment
+                return str .. string.rep(" ", padding)
+            end
+        end
+    
+        -- Function to format text with columns
+        local function FormatTextWithColumns(input)
+            if type(input) ~= "table" then
+                return tostring(input)
+            end
+            
+            local items = {}
+            
+            -- Extract items from table
+            if #input > 0 then
+                -- Array-like table
+                for i, v in ipairs(input) do
+                    table.insert(items, tostring(v))
+                end
+            else
+                -- Key-value table
+                for k, v in pairs(input) do
+                    table.insert(items, tostring(k) .. ": " .. tostring(v))
+                end
+            end
+            
+            if #items == 0 then
+                return "No data available"
+            end
+            
+            local columnCount = Label.ColumnCount or 2
+            local columnSpacing = Label.ColumnSpacing or 4
+            local totalWidth = 80 -- Approximate total width
+            
+            -- Calculate column widths
+            local columnWidths = {}
+            if Label.ColumnWidthMode == "equal" then
+                local equalWidth = math.floor((totalWidth - (columnSpacing * (columnCount - 1))) / columnCount)
+                for i = 1, columnCount do
+                    columnWidths[i] = equalWidth
+                end
+            elseif Label.ColumnWidthMode == "custom" and Label.ColumnWidths then
+                columnWidths = Label.ColumnWidths
+            else
+                -- Auto width calculation
+                local itemsPerColumn = math.ceil(#items / columnCount)
+                for col = 1, columnCount do
+                    local maxWidth = 0
+                    for row = 1, itemsPerColumn do
+                        local itemIndex = (col - 1) * itemsPerColumn + row
+                        if itemIndex <= #items then
+                            maxWidth = math.max(maxWidth, #items[itemIndex])
+                        end
+                    end
+                    columnWidths[col] = math.max(maxWidth, 10) -- Minimum width of 10
+                end
+            end
+            
+            -- Add column headers if provided
+            local result = {}
+            if Label.ColumnHeaders and #Label.ColumnHeaders > 0 then
+                local headerRow = {}
+                for i = 1, columnCount do
+                    local header = Label.ColumnHeaders[i] or ("Column " .. i)
+                    table.insert(headerRow, PadText(header, columnWidths[i], Label.ColumnAlignment))
+                end
+                table.insert(result, table.concat(headerRow, string.rep(" ", columnSpacing)))
+                
+                -- Add separator line
+                local separator = {}
+                for i = 1, columnCount do
+                    table.insert(separator, string.rep("-", columnWidths[i]))
+                end
+                table.insert(result, table.concat(separator, string.rep("-", columnSpacing)))
+            end
+            
+            -- Arrange items in columns
+            local itemsPerColumn = math.ceil(#items / columnCount)
+            for row = 1, itemsPerColumn do
+                local rowData = {}
+                for col = 1, columnCount do
+                    local itemIndex = (col - 1) * itemsPerColumn + row
+                    if itemIndex <= #items then
+                        table.insert(rowData, PadText(items[itemIndex], columnWidths[col], Label.ColumnAlignment))
+                    else
+                        table.insert(rowData, string.rep(" ", columnWidths[col]))
+                    end
+                end
+                table.insert(result, table.concat(rowData, string.rep(" ", columnSpacing)))
+            end
+            
+            return table.concat(result, "\n")
+        end
+    
         function Label:SetVisible(Visible: boolean)
             Label.Visible = Visible
-
+    
             TextLabel.Visible = Label.Visible
             Groupbox:Resize()
         end
-
+    
         function Label:SetText(Text: string)
             Label.Text = Text
-            TextLabel.Text = Text
-
+            
+            -- Format text with columns if enabled
+            if Label.UseColumns and type(Text) == "table" then
+                TextLabel.Text = FormatTextWithColumns(Text)
+            else
+                TextLabel.Text = Text
+            end
+    
             if Label.DoesWrap then
                 local _, Y =
                     Library:GetTextBounds(Label.Text, TextLabel.FontFace, TextLabel.TextSize, TextLabel.AbsoluteSize.X)
                 TextLabel.Size = UDim2.new(1, 0, 0, Y + 4 * Library.DPIScale)
             end
-
+    
             Groupbox:Resize()
         end
-
+    
+        -- Column-specific methods
+        function Label:SetColumnCount(count)
+            Label.ColumnCount = count
+            if Label.UseColumns and type(Label.Text) == "table" then
+                Label:SetText(Label.Text)
+            end
+        end
+    
+        function Label:SetColumnSpacing(spacing)
+            Label.ColumnSpacing = spacing
+            if Label.UseColumns and type(Label.Text) == "table" then
+                Label:SetText(Label.Text)
+            end
+        end
+    
+        function Label:SetColumnHeaders(headers)
+            Label.ColumnHeaders = headers
+            if Label.UseColumns and type(Label.Text) == "table" then
+                Label:SetText(Label.Text)
+            end
+        end
+    
+        function Label:SetColumnWidthMode(mode)
+            Label.ColumnWidthMode = mode -- "auto", "equal", "custom"
+            if Label.UseColumns and type(Label.Text) == "table" then
+                Label:SetText(Label.Text)
+            end
+        end
+    
+        function Label:SetColumnAlignment(alignment)
+            Label.ColumnAlignment = alignment -- "left", "center", "right"
+            if Label.UseColumns and type(Label.Text) == "table" then
+                Label:SetText(Label.Text)
+            end
+        end
+    
+        function Label:SetColumnSeparator(separator)
+            Label.ColumnSeparator = separator
+            if Label.UseColumns and type(Label.Text) == "table" then
+                Label:SetText(Label.Text)
+            end
+        end
+    
+        function Label:SetColumnWidths(widths)
+            Label.ColumnWidths = widths
+            if Label.UseColumns and type(Label.Text) == "table" then
+                Label:SetText(Label.Text)
+            end
+        end
+    
+        function Label:SetUseColumns(enabled)
+            Label.UseColumns = enabled
+            if type(Label.Text) == "table" then
+                Label:SetText(Label.Text)
+            end
+        end
+    
+        -- Method to setup columns with all options at once
+        function Label:SetupColumns(options)
+            if options.count then Label.ColumnCount = options.count end
+            if options.spacing then Label.ColumnSpacing = options.spacing end
+            if options.headers then Label.ColumnHeaders = options.headers end
+            if options.widthMode then Label.ColumnWidthMode = options.widthMode end
+            if options.alignment then Label.ColumnAlignment = options.alignment end
+            if options.separator then Label.ColumnSeparator = options.separator end
+            if options.widths then Label.ColumnWidths = options.widths end
+            if options.enabled ~= nil then Label.UseColumns = options.enabled end
+            
+            if type(Label.Text) == "table" then
+                Label:SetText(Label.Text)
+            end
+        end
+    
+        -- Method to get column configuration
+        function Label:GetColumnConfig()
+            return {
+                count = Label.ColumnCount,
+                spacing = Label.ColumnSpacing,
+                headers = Label.ColumnHeaders,
+                widthMode = Label.ColumnWidthMode,
+                alignment = Label.ColumnAlignment,
+                separator = Label.ColumnSeparator,
+                widths = Label.ColumnWidths,
+                enabled = Label.UseColumns
+            }
+        end
+    
         if Label.DoesWrap then
             local _, Y =
                 Library:GetTextBounds(Label.Text, TextLabel.FontFace, TextLabel.TextSize, TextLabel.AbsoluteSize.X)
@@ -2708,41 +2937,41 @@ do
                 Parent = TextLabel,
             })
         end
-
+    
         if Data.DoesWrap then
             local Last = TextLabel.AbsoluteSize
-
+    
             TextLabel:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
                 if TextLabel.AbsoluteSize == Last then
                     return
                 end
-
+    
                 local _, Y =
                     Library:GetTextBounds(Label.Text, TextLabel.FontFace, TextLabel.TextSize, TextLabel.AbsoluteSize.X)
                 TextLabel.Size = UDim2.new(1, 0, 0, Y + 4 * Library.DPIScale)
-
+    
                 Last = TextLabel.AbsoluteSize
                 Groupbox:Resize()
             end)
         end
-
+    
         Groupbox:Resize()
-
+    
         Label.TextLabel = TextLabel
         Label.Container = Container
         if not Data.DoesWrap then
             setmetatable(Label, BaseAddons)
         end
-
+    
         Label.Holder = TextLabel
         table.insert(Groupbox.Elements, Label)
-
+    
         if Data.Idx then
             Labels[Data.Idx] = Label
         else
             table.insert(Labels, Label)
         end
-
+    
         return Label
     end
 
