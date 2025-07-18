@@ -2657,6 +2657,11 @@ do
             Data.ColumnSeparator = Params.ColumnSeparator or " | "
             Data.ColumnWidths = Params.ColumnWidths or nil
             Data.UseColumns = Params.UseColumns or false
+            Data.UseUIColumns = Params.UseUIColumns or false -- New parameter for UI columns
+            Data.ColumnHeight = Params.ColumnHeight or 20
+            Data.ColumnPadding = Params.ColumnPadding or 5
+            Data.ColumnDividerColor = Params.ColumnDividerColor or nil
+            Data.ColumnDividerThickness = Params.ColumnDividerThickness or 1
         else
             Data.Text = First or ""
             Data.DoesWrap = Second or false
@@ -2673,6 +2678,11 @@ do
             Data.ColumnSeparator = " | "
             Data.ColumnWidths = nil
             Data.UseColumns = false
+            Data.UseUIColumns = false
+            Data.ColumnHeight = 20
+            Data.ColumnPadding = 5
+            Data.ColumnDividerColor = nil
+            Data.ColumnDividerThickness = 1
         end
     
         local Groupbox = self
@@ -2692,6 +2702,11 @@ do
             ColumnSeparator = Data.ColumnSeparator,
             ColumnWidths = Data.ColumnWidths,
             UseColumns = Data.UseColumns,
+            UseUIColumns = Data.UseUIColumns,
+            ColumnHeight = Data.ColumnHeight,
+            ColumnPadding = Data.ColumnPadding,
+            ColumnDividerColor = Data.ColumnDividerColor,
+            ColumnDividerThickness = Data.ColumnDividerThickness,
         }
     
         local TextLabel = New("TextLabel", {
@@ -2704,7 +2719,230 @@ do
             Parent = Container,
         })
     
-        -- Helper function to pad text to specific width
+        -- Create UI Column Container
+        local ColumnContainer = New("Frame", {
+            Name = "ColumnContainer",
+            BackgroundTransparency = 1,
+            BorderSizePixel = 0,
+            Position = UDim2.new(0, 0, 0, 0),
+            Size = UDim2.new(1, 0, 1, 0),
+            ZIndex = TextLabel.ZIndex + 1,
+            Parent = Container,
+            Visible = false, -- Hidden by default
+        })
+    
+        -- Function to create UI columns
+        local function CreateUIColumns(input)
+            -- Clear existing column elements
+            for _, child in pairs(ColumnContainer:GetChildren()) do
+                child:Destroy()
+            end
+    
+            if not input or type(input) ~= "table" or #input == 0 then
+                -- Show empty message
+                local EmptyLabel = New("TextLabel", {
+                    Name = "EmptyLabel",
+                    BackgroundTransparency = 1,
+                    Size = UDim2.new(1, 0, 1, 0),
+                    ZIndex = TextLabel.ZIndex + 2,
+                    Font = Enum.Font.GothamMedium,
+                    Text = "No data available",
+                    TextColor3 = TextLabel.TextColor3,
+                    TextSize = Data.Size,
+                    TextTransparency = 0.500,
+                    TextXAlignment = Enum.TextXAlignment.Center,
+                    TextYAlignment = Enum.TextYAlignment.Center,
+                    Parent = ColumnContainer,
+                })
+                return
+            end
+    
+            local items = {}
+            
+            -- Extract items from table
+            if #input > 0 then
+                -- Array-like table
+                for i, v in ipairs(input) do
+                    table.insert(items, tostring(v))
+                end
+            else
+                -- Key-value table
+                for k, v in pairs(input) do
+                    table.insert(items, tostring(k) .. ": " .. tostring(v))
+                end
+            end
+            
+            if #items == 0 then
+                local EmptyLabel = New("TextLabel", {
+                    Name = "EmptyLabel",
+                    BackgroundTransparency = 1,
+                    Size = UDim2.new(1, 0, 1, 0),
+                    ZIndex = TextLabel.ZIndex + 2,
+                    Font = Enum.Font.GothamMedium,
+                    Text = "No data available",
+                    TextColor3 = TextLabel.TextColor3,
+                    TextSize = Data.Size,
+                    TextTransparency = 0.500,
+                    TextXAlignment = Enum.TextXAlignment.Center,
+                    TextYAlignment = Enum.TextYAlignment.Center,
+                    Parent = ColumnContainer,
+                })
+                return
+            end
+    
+            local columnCount = Label.ColumnCount or 2
+            local columnSpacing = Label.ColumnSpacing or 4
+            local totalWidth = Container.AbsoluteSize.X - 20 -- Account for padding
+            
+            -- Calculate column widths
+            local columnWidths = {}
+            if Label.ColumnWidthMode == "equal" then
+                local equalWidth = math.floor((totalWidth - (columnSpacing * (columnCount - 1))) / columnCount)
+                for i = 1, columnCount do
+                    columnWidths[i] = equalWidth
+                end
+            elseif Label.ColumnWidthMode == "custom" and Label.ColumnWidths then
+                columnWidths = Label.ColumnWidths
+            else
+                -- Auto width calculation
+                local itemsPerColumn = math.ceil(#items / columnCount)
+                for col = 1, columnCount do
+                    local maxWidth = 0
+                    for row = 1, itemsPerColumn do
+                        local itemIndex = (col - 1) * itemsPerColumn + row
+                        if itemIndex <= #items then
+                            maxWidth = math.max(maxWidth, #items[itemIndex])
+                        end
+                    end
+                    columnWidths[col] = math.max(maxWidth * 8, 80) -- Minimum 80px
+                end
+            end
+    
+            -- Create column headers if provided
+            local headerHeight = 0
+            if Label.ColumnHeaders and #Label.ColumnHeaders > 0 then
+                local HeaderFrame = New("Frame", {
+                    Name = "HeaderFrame",
+                    BackgroundColor3 = Color3.new(0.1, 0.1, 0.1), -- Dark background for headers
+                    BorderSizePixel = 0,
+                    Position = UDim2.new(0, 0, 0, 0),
+                    Size = UDim2.new(1, 0, 0, Label.ColumnHeight),
+                    ZIndex = TextLabel.ZIndex + 2,
+                    Parent = ColumnContainer,
+                })
+    
+                -- Create header border
+                local HeaderBorder = New("Frame", {
+                    Name = "HeaderBorder",
+                    BackgroundColor3 = Label.ColumnDividerColor or Color3.new(0.3, 0.3, 0.3),
+                    BorderSizePixel = 0,
+                    Position = UDim2.new(0, 0, 1, 0),
+                    Size = UDim2.new(1, 0, 0, Label.ColumnDividerThickness),
+                    ZIndex = TextLabel.ZIndex + 3,
+                    Parent = HeaderFrame,
+                })
+    
+                -- Create header cells and vertical dividers
+                local currentX = 0
+                for i, header in ipairs(Label.ColumnHeaders) do
+                    -- Header cell
+                    local HeaderCell = New("TextLabel", {
+                        Name = "HeaderCell_" .. i,
+                        BackgroundTransparency = 1,
+                        Position = UDim2.new(0, currentX + Label.ColumnPadding, 0, 0),
+                        Size = UDim2.new(0, columnWidths[i] - Label.ColumnPadding * 2, 1, 0),
+                        ZIndex = TextLabel.ZIndex + 3,
+                        Font = Enum.Font.GothamBold,
+                        Text = header,
+                        TextColor3 = TextLabel.TextColor3,
+                        TextSize = Data.Size,
+                        TextTransparency = 0.100,
+                        TextXAlignment = Enum.TextXAlignment[Label.ColumnAlignment:gsub("^%l", string.upper)],
+                        TextYAlignment = Enum.TextYAlignment.Center,
+                        Parent = HeaderFrame,
+                    })
+    
+                    -- Vertical divider (except for last column)
+                    if i < #Label.ColumnHeaders then
+                        local VerticalDivider = New("Frame", {
+                            Name = "VerticalDivider_" .. i,
+                            BackgroundColor3 = Label.ColumnDividerColor or Color3.new(0.3, 0.3, 0.3),
+                            BorderSizePixel = 0,
+                            Position = UDim2.new(0, currentX + columnWidths[i], 0, 0),
+                            Size = UDim2.new(0, Label.ColumnDividerThickness, 1, 0),
+                            ZIndex = TextLabel.ZIndex + 4,
+                            Parent = HeaderFrame,
+                        })
+                    end
+    
+                    currentX = currentX + columnWidths[i]
+                end
+    
+                headerHeight = Label.ColumnHeight
+            end
+    
+            -- Create data columns
+            local itemsPerColumn = math.ceil(#items / columnCount)
+            local currentX = 0
+            
+            for col = 1, columnCount do
+                -- Create column container
+                local ColumnFrame = New("Frame", {
+                    Name = "Column_" .. col,
+                    BackgroundTransparency = 1,
+                    BorderSizePixel = 0,
+                    Position = UDim2.new(0, currentX, 0, headerHeight),
+                    Size = UDim2.new(0, columnWidths[col], 1, -headerHeight),
+                    ZIndex = TextLabel.ZIndex + 2,
+                    Parent = ColumnContainer,
+                })
+    
+                -- Add items to this column
+                for row = 1, itemsPerColumn do
+                    local itemIndex = (col - 1) * itemsPerColumn + row
+                    if itemIndex <= #items then
+                        local ItemLabel = New("TextLabel", {
+                            Name = "Item_" .. itemIndex,
+                            BackgroundTransparency = 1,
+                            Position = UDim2.new(0, Label.ColumnPadding, 0, (row - 1) * Label.ColumnHeight),
+                            Size = UDim2.new(1, -Label.ColumnPadding * 2, 0, Label.ColumnHeight),
+                            ZIndex = TextLabel.ZIndex + 3,
+                            Font = Enum.Font.GothamMedium,
+                            Text = items[itemIndex],
+                            TextColor3 = TextLabel.TextColor3,
+                            TextSize = Data.Size - 1,
+                            TextTransparency = 0.300,
+                            TextXAlignment = Enum.TextXAlignment[Label.ColumnAlignment:gsub("^%l", string.upper)],
+                            TextYAlignment = Enum.TextYAlignment.Center,
+                            TextTruncate = Enum.TextTruncate.AtEnd,
+                            Parent = ColumnFrame,
+                        })
+                    end
+                end
+    
+                -- Add vertical divider (except for last column)
+                if col < columnCount then
+                    local VerticalDivider = New("Frame", {
+                        Name = "VerticalDivider_" .. col,
+                        BackgroundColor3 = Label.ColumnDividerColor or Color3.new(0.3, 0.3, 0.3),
+                        BackgroundTransparency = 0.8,
+                        BorderSizePixel = 0,
+                        Position = UDim2.new(0, currentX + columnWidths[col], 0, headerHeight),
+                        Size = UDim2.new(0, Label.ColumnDividerThickness, 1, -headerHeight),
+                        ZIndex = TextLabel.ZIndex + 4,
+                        Parent = ColumnContainer,
+                    })
+                end
+    
+                currentX = currentX + columnWidths[col]
+            end
+    
+            -- Update container size
+            local totalHeight = headerHeight + (itemsPerColumn * Label.ColumnHeight)
+            ColumnContainer.Size = UDim2.new(1, 0, 0, totalHeight)
+        end
+    
+        -- Helper function to pad text to specific width (for text-only columns)
         local function PadText(text, width, alignment)
             local str = tostring(text)
             if #str >= width then
@@ -2723,7 +2961,7 @@ do
             end
         end
     
-        -- Function to format text with columns
+        -- Function to format text with columns (for text-only mode)
         local function FormatTextWithColumns(input)
             if type(input) ~= "table" then
                 return tostring(input)
@@ -2816,16 +3054,26 @@ do
             Label.Visible = Visible
     
             TextLabel.Visible = Label.Visible
+            ColumnContainer.Visible = Label.Visible and Label.UseUIColumns
             Groupbox:Resize()
         end
     
         function Label:SetText(Text: string)
             Label.Text = Text
             
-            -- Format text with columns if enabled
-            if Label.UseColumns and type(Text) == "table" then
+            -- Format text with UI columns if enabled
+            if Label.UseUIColumns and type(Text) == "table" then
+                TextLabel.Visible = false
+                ColumnContainer.Visible = true
+                CreateUIColumns(Text)
+            -- Format text with text columns if enabled
+            elseif Label.UseColumns and type(Text) == "table" then
+                TextLabel.Visible = true
+                ColumnContainer.Visible = false
                 TextLabel.Text = FormatTextWithColumns(Text)
             else
+                TextLabel.Visible = true
+                ColumnContainer.Visible = false
                 TextLabel.Text = Text
             end
     
@@ -2841,35 +3089,35 @@ do
         -- Column-specific methods
         function Label:SetColumnCount(count)
             Label.ColumnCount = count
-            if Label.UseColumns and type(Label.Text) == "table" then
+            if (Label.UseColumns or Label.UseUIColumns) and type(Label.Text) == "table" then
                 Label:SetText(Label.Text)
             end
         end
     
         function Label:SetColumnSpacing(spacing)
             Label.ColumnSpacing = spacing
-            if Label.UseColumns and type(Label.Text) == "table" then
+            if (Label.UseColumns or Label.UseUIColumns) and type(Label.Text) == "table" then
                 Label:SetText(Label.Text)
             end
         end
     
         function Label:SetColumnHeaders(headers)
             Label.ColumnHeaders = headers
-            if Label.UseColumns and type(Label.Text) == "table" then
+            if (Label.UseColumns or Label.UseUIColumns) and type(Label.Text) == "table" then
                 Label:SetText(Label.Text)
             end
         end
     
         function Label:SetColumnWidthMode(mode)
             Label.ColumnWidthMode = mode -- "auto", "equal", "custom"
-            if Label.UseColumns and type(Label.Text) == "table" then
+            if (Label.UseColumns or Label.UseUIColumns) and type(Label.Text) == "table" then
                 Label:SetText(Label.Text)
             end
         end
     
         function Label:SetColumnAlignment(alignment)
             Label.ColumnAlignment = alignment -- "left", "center", "right"
-            if Label.UseColumns and type(Label.Text) == "table" then
+            if (Label.UseColumns or Label.UseUIColumns) and type(Label.Text) == "table" then
                 Label:SetText(Label.Text)
             end
         end
@@ -2883,14 +3131,56 @@ do
     
         function Label:SetColumnWidths(widths)
             Label.ColumnWidths = widths
-            if Label.UseColumns and type(Label.Text) == "table" then
+            if (Label.UseColumns or Label.UseUIColumns) and type(Label.Text) == "table" then
                 Label:SetText(Label.Text)
             end
         end
     
         function Label:SetUseColumns(enabled)
             Label.UseColumns = enabled
+            if enabled then
+                Label.UseUIColumns = false -- Disable UI columns when using text columns
+            end
             if type(Label.Text) == "table" then
+                Label:SetText(Label.Text)
+            end
+        end
+    
+        function Label:SetUseUIColumns(enabled)
+            Label.UseUIColumns = enabled
+            if enabled then
+                Label.UseColumns = false -- Disable text columns when using UI columns
+            end
+            if type(Label.Text) == "table" then
+                Label:SetText(Label.Text)
+            end
+        end
+    
+        -- UI Column specific methods
+        function Label:SetColumnHeight(height)
+            Label.ColumnHeight = height
+            if Label.UseUIColumns and type(Label.Text) == "table" then
+                Label:SetText(Label.Text)
+            end
+        end
+    
+        function Label:SetColumnPadding(padding)
+            Label.ColumnPadding = padding
+            if Label.UseUIColumns and type(Label.Text) == "table" then
+                Label:SetText(Label.Text)
+            end
+        end
+    
+        function Label:SetColumnDividerColor(color)
+            Label.ColumnDividerColor = color
+            if Label.UseUIColumns and type(Label.Text) == "table" then
+                Label:SetText(Label.Text)
+            end
+        end
+    
+        function Label:SetColumnDividerThickness(thickness)
+            Label.ColumnDividerThickness = thickness
+            if Label.UseUIColumns and type(Label.Text) == "table" then
                 Label:SetText(Label.Text)
             end
         end
@@ -2905,6 +3195,11 @@ do
             if options.separator then Label.ColumnSeparator = options.separator end
             if options.widths then Label.ColumnWidths = options.widths end
             if options.enabled ~= nil then Label.UseColumns = options.enabled end
+            if options.uiEnabled ~= nil then Label.UseUIColumns = options.uiEnabled end
+            if options.height then Label.ColumnHeight = options.height end
+            if options.padding then Label.ColumnPadding = options.padding end
+            if options.dividerColor then Label.ColumnDividerColor = options.dividerColor end
+            if options.dividerThickness then Label.ColumnDividerThickness = options.dividerThickness end
             
             if type(Label.Text) == "table" then
                 Label:SetText(Label.Text)
@@ -2921,7 +3216,12 @@ do
                 alignment = Label.ColumnAlignment,
                 separator = Label.ColumnSeparator,
                 widths = Label.ColumnWidths,
-                enabled = Label.UseColumns
+                enabled = Label.UseColumns,
+                uiEnabled = Label.UseUIColumns,
+                height = Label.ColumnHeight,
+                padding = Label.ColumnPadding,
+                dividerColor = Label.ColumnDividerColor,
+                dividerThickness = Label.ColumnDividerThickness
             }
         end
     
@@ -2958,6 +3258,7 @@ do
         Groupbox:Resize()
     
         Label.TextLabel = TextLabel
+        Label.ColumnContainer = ColumnContainer
         Label.Container = Container
         if not Data.DoesWrap then
             setmetatable(Label, BaseAddons)
