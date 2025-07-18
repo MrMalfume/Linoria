@@ -2712,7 +2712,7 @@ do
         local TextLabel = New("TextLabel", {
             BackgroundTransparency = 1,
             Size = UDim2.new(1, 0, 0, 18),
-            Text = Label.Text,
+            Text = "", -- Initialize as empty string, will be set below
             TextSize = Data.Size,
             TextWrapped = Label.DoesWrap,
             TextXAlignment = Groupbox.IsKeyTab and Enum.TextXAlignment.Center or Enum.TextXAlignment.Left,
@@ -3050,6 +3050,26 @@ do
             return table.concat(result, "\n")
         end
     
+        -- Set initial text properly
+        local function SetInitialText()
+            if Label.UseUIColumns and type(Data.Text) == "table" then
+                TextLabel.Visible = false
+                ColumnContainer.Visible = true
+                CreateUIColumns(Data.Text)
+            elseif Label.UseColumns and type(Data.Text) == "table" then
+                TextLabel.Visible = true
+                ColumnContainer.Visible = false
+                TextLabel.Text = FormatTextWithColumns(Data.Text)
+            else
+                TextLabel.Visible = true
+                ColumnContainer.Visible = false
+                TextLabel.Text = tostring(Data.Text)
+            end
+        end
+    
+        -- Call initial text setting
+        SetInitialText()
+    
         function Label:SetVisible(Visible: boolean)
             Label.Visible = Visible
     
@@ -3074,7 +3094,7 @@ do
             else
                 TextLabel.Visible = true
                 ColumnContainer.Visible = false
-                TextLabel.Text = Text
+                TextLabel.Text = tostring(Text)
             end
     
             if Label.DoesWrap then
