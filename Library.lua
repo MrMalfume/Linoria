@@ -94,6 +94,91 @@ local Library = {
     DPIRegistry = {},
 }
 
+local ObsidianImageManager = {
+    Assets = {
+        TransparencyTexture = {
+            RobloxId = 139785960036434,
+            Path = "Obsidian/assets/TransparencyTexture.png",
+
+            Id = nil
+        },
+        
+        SaturationMap = {
+            RobloxId = 4155801252,
+            Path = "Obsidian/assets/SaturationMap.png",
+
+            Id = nil
+        }
+    }
+}
+do
+    local BaseURL = "https://raw.githubusercontent.com/deividcomsono/Obsidian/refs/heads/main/"
+
+    local function RecursiveCreatePath(Path: string, IsFile: boolean?)
+        if not isfolder or not makefolder then return end
+
+        local Segments = Path:split("/")
+        local TraversedPath = ""
+
+        if IsFile then
+            table.remove(Segments, #Segments)
+        end
+
+        for _, Segment in ipairs(Segments) do
+            if not isfolder(TraversedPath .. Segment) then
+                makefolder(TraversedPath .. Segment)
+            end
+
+            TraversedPath = TraversedPath .. Segment .. "/"
+        end
+
+        return TraversedPath
+    end
+
+    function ObsidianImageManager.GetAsset(AssetName: string)
+        if not ObsidianImageManager.Assets[AssetName] then
+            return nil
+        end
+
+        local AssetData = ObsidianImageManager.Assets[AssetName]
+        if AssetData.Id then
+            return AssetData.Id
+        end
+
+        local AssetID = `rbxassetid://{AssetData.RobloxId}`
+
+        if getcustomasset then
+            local Success, NewID = pcall(getcustomasset, AssetData.Path)
+
+            if Success and NewID then
+                AssetID = NewID
+            end
+        end
+
+        AssetData.Id = AssetID
+        return AssetID
+    end
+
+    function ObsidianImageManager.DownloadAsset(AssetPath: string)
+        if not getcustomasset or not writefile or not isfile then
+            return
+        end
+
+        RecursiveCreatePath(AssetPath, true)
+
+        if isfile(AssetPath) then
+            return
+        end
+
+        local URLPath = AssetPath:gsub("Obsidian/", "")
+        writefile(AssetPath, game:HttpGet(`{BaseURL}{URLPath}`))
+    end
+
+    for _, Data in ObsidianImageManager.Assets do
+        ObsidianImageManager.DownloadAsset(Data.Path)
+    end
+end
+
 if RunService:IsStudio() then
     if UserInputService.TouchEnabled and not UserInputService.MouseEnabled then
         Library.IsMobile = true
@@ -226,6 +311,48 @@ local Templates = {
         Changed = function() end,
 
         Disabled = false,
+        Visible = true,
+    },
+    Viewport = {
+        Object = nil,
+        Camera = nil,
+        Clone = true,
+        AutoFocus = true,
+        Interactive = false,
+        Height = 200,
+        Visible = true,
+    },
+    Preview = {
+        Text = "Preview",
+        Object = nil,
+        Camera = nil,
+        Clone = true,
+        Height = 200,
+        SizeMode = "fixed", -- "fixed", "dynamic", "aspect"
+        MinHeight = 150,
+        MaxHeight = 400,
+        AspectRatio = 1.33,
+        ScaleFactor = 0.3,
+        CameraDistance = 10,
+        CameraAngle = Vector3.new(0, 0, 0),
+        BackgroundColor = nil,
+        AutoRotate = true,
+        RotationSpeed = 1,
+        FocusIndicator = true,
+        Interactive = true,
+        AutoFocus = true,
+        Visible = true,
+
+        Callback = function() end,
+    },
+    Image = {
+        Image = "",
+        Transparency = 0,
+        Color = Color3.new(1, 1, 1),
+        RectOffset = Vector2.zero,
+        RectSize = Vector2.zero,
+        ScaleType = Enum.ScaleType.Fit,
+        Height = 200,
         Visible = true,
     },
 
@@ -1369,6 +1496,68 @@ function Library:AddDraggableMenu(Name: string)
     return Background, Container
 end
 
+--// Watermark \\--
+do
+    local WatermarkBackground = Library:MakeOutline(ScreenGui, Library.CornerRadius, 10)
+    WatermarkBackground.AutomaticSize = Enum.AutomaticSize.Y
+    WatermarkBackground.Position = UDim2.fromOffset(6, 6)
+    WatermarkBackground.Size = UDim2.fromOffset(0, 0)
+    WatermarkBackground.Visible = false
+
+    Library:UpdateDPI(WatermarkBackground, {
+        Position = false,
+        Size = false,
+    })
+
+    local Holder = New("Frame", {
+        BackgroundColor3 = "BackgroundColor",
+        Position = UDim2.fromOffset(2, 2),
+        Size = UDim2.new(1, -4, 1, -4),
+        Parent = WatermarkBackground,
+    })
+    New("UICorner", {
+        CornerRadius = UDim.new(0, Library.CornerRadius - 1),
+        Parent = Holder,
+    })
+
+    local WatermarkLabel = New("TextLabel", {
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 0, 0, 32),
+        Position = UDim2.fromOffset(0, -8 * Library.DPIScale + 7),
+        Text = "",
+        TextSize = 15,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Parent = Holder,
+    })
+    New("UIPadding", {
+        PaddingLeft = UDim.new(0, 12),
+        PaddingRight = UDim.new(0, 12),
+        Parent = WatermarkLabel,
+    })
+
+    Library:MakeDraggable(WatermarkBackground, WatermarkLabel, true)
+
+    local function ResizeWatermark()
+        local X, Y = Library:GetTextBounds(WatermarkLabel.Text, Library.Scheme.Font, 15)
+        WatermarkBackground.Size = UDim2.fromOffset((12 + X + 12 + 4) * Library.DPIScale, Y * Library.DPIScale * 2 + 4)
+        Library:UpdateDPI(WatermarkBackground, {
+            Size = UDim2.fromOffset(12 + X + 12 + 4, Y * 2 + 4),
+        })
+    end
+
+    function Library:SetWatermarkVisibility(Visible: boolean)
+        WatermarkBackground.Visible = Visible
+        if Visible then
+            ResizeWatermark()
+        end
+    end
+
+    function Library:SetWatermark(Text: string)
+        WatermarkLabel.Text = Text
+        ResizeWatermark()
+    end
+end
+
 --// Context Menu \\--
 local CurrentMenu
 function Library:AddContextMenu(
@@ -2049,7 +2238,7 @@ do
         })
 
         local HolderTransparency = New("ImageLabel", {
-            Image = "rbxassetid://139785960036434",
+            Image = ObsidianImageManager.GetAsset("TransparencyTexture"),
             ImageTransparency = (1 - ColorPicker.Transparency),
             ScaleType = Enum.ScaleType.Tile,
             Size = UDim2.fromScale(1, 1),
@@ -2102,7 +2291,7 @@ do
         --// Sat Map
         local SatVipMap = New("ImageButton", {
             BackgroundColor3 = ColorPicker.Value,
-            Image = "rbxassetid://4155801252",
+            Image = ObsidianImageManager.GetAsset("SaturationMap"),
             Size = UDim2.fromOffset(200, 200),
             Parent = ColorHolder,
         })
@@ -2148,7 +2337,7 @@ do
         local TransparencySelector, TransparencyColor, TransparencyCursor
         if Info.Transparency then
             TransparencySelector = New("ImageButton", {
-                Image = "rbxassetid://139785960036434",
+                Image = ObsidianImageManager.GetAsset("TransparencyTexture"),
                 ScaleType = Enum.ScaleType.Tile,
                 Size = UDim2.fromOffset(16, 200),
                 TileSize = UDim2.fromOffset(8, 8),
@@ -2309,13 +2498,13 @@ do
 
             ColorPicker.Transparency = Info.Transparency and Transparency or 0
             ColorPicker:SetHSVFromRGB(Color)
-            ColorPicker:Display()
+            ColorPicker:Update()
         end
 
         function ColorPicker:SetValueRGB(Color, Transparency)
             ColorPicker.Transparency = Info.Transparency and Transparency or 0
             ColorPicker:SetHSVFromRGB(Color)
-            ColorPicker:Display()
+            ColorPicker:Update()
         end
 
         Holder.MouseButton1Click:Connect(ColorMenu.Toggle)
@@ -4122,6 +4311,886 @@ do
         return Dropdown
     end
 
+    function Funcs:AddViewport(Idx, Info)
+        Info = Library:Validate(Info, Templates.Viewport)
+
+        local Groupbox = self
+        local Container = Groupbox.Container
+
+        local Dragging, Pinching = false, false
+        local LastMousePos, LastPinchDist = nil, 0
+
+        local Viewport = {
+            Object = if Info.Clone then Info.Object:Clone() else Info.Object,
+            Camera = if not Info.Camera then Instance.new("Camera") else Info.Camera,
+            Interactive = Info.Interactive,
+            AutoFocus = Info.AutoFocus,
+            Visible = Info.Visible,
+            Type = "Viewport",
+        }
+
+        assert(
+            typeof(Viewport.Object) == "Instance" and (Viewport.Object:IsA("BasePart") or Viewport.Object:IsA("Model")),
+            "Instance must be a BasePart or Model."
+        )
+
+        assert(
+            typeof(Viewport.Camera) == "Instance" and Viewport.Camera:IsA("Camera"),
+            "Camera must be a valid Camera instance."
+        )
+
+        local function GetModelSize(model)
+            if model:IsA("BasePart") then
+                return model.Size
+            end
+
+            return select(2, model:GetBoundingBox())
+        end
+
+        local function FocusCamera()
+            local ModelSize = GetModelSize(Viewport.Object)
+            local MaxExtent = math.max(ModelSize.X, ModelSize.Y, ModelSize.Z)
+            local CameraDistance = MaxExtent * 2
+            local ModelPosition = Viewport.Object:GetPivot().Position
+
+            Viewport.Camera.CFrame =
+                CFrame.new(ModelPosition + Vector3.new(0, MaxExtent / 2, CameraDistance), ModelPosition)
+        end
+
+        local Holder = New("Frame", {
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 0, Info.Height),
+            Visible = Viewport.Visible,
+            Parent = Container,
+        })
+
+        local Box = New("Frame", {
+            AnchorPoint = Vector2.new(0, 1),
+            BackgroundColor3 = "MainColor",
+            BorderColor3 = "OutlineColor",
+            BorderSizePixel = 1,
+            Position = UDim2.fromScale(0, 1),
+            Size = UDim2.fromScale(1, 1),
+            Parent = Holder,
+        })
+
+        New("UIPadding", {
+            PaddingBottom = UDim.new(0, 3),
+            PaddingLeft = UDim.new(0, 8),
+            PaddingRight = UDim.new(0, 8),
+            PaddingTop = UDim.new(0, 4),
+            Parent = Box,
+        })
+
+        local ViewportFrame = New("ViewportFrame", {
+            BackgroundTransparency = 1,
+            Size = UDim2.fromScale(1, 1),
+            Parent = Box,
+            CurrentCamera = Viewport.Camera,
+            Active = Viewport.Interactive,
+        })
+
+        ViewportFrame.MouseEnter:Connect(function()
+            if not Viewport.Interactive then
+                return
+            end
+
+            for _, Side in pairs(Groupbox.Tab.Sides) do
+                Side.ScrollingEnabled = false
+            end
+        end)
+
+        ViewportFrame.MouseLeave:Connect(function()
+            if not Viewport.Interactive then
+                return
+            end
+
+            for _, Side in pairs(Groupbox.Tab.Sides) do
+                Side.ScrollingEnabled = true
+            end
+        end)
+
+        ViewportFrame.InputBegan:Connect(function(input)
+            if not Viewport.Interactive then
+                return
+            end
+
+            if input.UserInputType == Enum.UserInputType.MouseButton2 then
+                Dragging = true
+                LastMousePos = input.Position
+            elseif input.UserInputType == Enum.UserInputType.Touch and not Pinching then
+                Dragging = true
+                LastMousePos = input.Position
+            end
+        end)
+
+        Library:GiveSignal(UserInputService.InputEnded:Connect(function(input)
+            if not Viewport.Interactive then
+                return
+            end
+
+            if input.UserInputType == Enum.UserInputType.MouseButton2 then
+                Dragging = false
+            elseif input.UserInputType == Enum.UserInputType.Touch then
+                Dragging = false
+            end
+        end))
+
+        Library:GiveSignal(UserInputService.InputChanged:Connect(function(input)
+            if not Viewport.Interactive or not Dragging or Pinching then
+                return
+            end
+
+            if
+                input.UserInputType == Enum.UserInputType.MouseMovement
+                or input.UserInputType == Enum.UserInputType.Touch
+            then
+                local MouseDelta = input.Position - LastMousePos
+                LastMousePos = input.Position
+
+                local Position = Viewport.Object:GetPivot().Position
+                local Camera = Viewport.Camera
+
+                local RotationY = CFrame.fromAxisAngle(Vector3.new(0, 1, 0), -MouseDelta.X * 0.01)
+                Camera.CFrame = CFrame.new(Position) * RotationY * CFrame.new(-Position) * Camera.CFrame
+
+                local RotationX = CFrame.fromAxisAngle(Camera.CFrame.RightVector, -MouseDelta.Y * 0.01)
+                local PitchedCFrame = CFrame.new(Position) * RotationX * CFrame.new(-Position) * Camera.CFrame
+
+                if PitchedCFrame.UpVector.Y > 0.1 then
+                    Camera.CFrame = PitchedCFrame
+                end
+            end
+        end))
+
+        ViewportFrame.InputChanged:Connect(function(input)
+            if not Viewport.Interactive then
+                return
+            end
+
+            if input.UserInputType == Enum.UserInputType.MouseWheel then
+                local ZoomAmount = input.Position.Z * 2
+                Viewport.Camera.CFrame += Viewport.Camera.CFrame.LookVector * ZoomAmount
+            end
+        end)
+
+        Library:GiveSignal(UserInputService.TouchPinch:Connect(function(touchPositions, scale, velocity, state)
+            if not Viewport.Interactive or not Library:MouseIsOverFrame(ViewportFrame, touchPositions[1]) then
+                return
+            end
+
+            if state == Enum.UserInputState.Begin then
+                Pinching = true
+                Dragging = false
+                LastPinchDist = (touchPositions[1] - touchPositions[2]).Magnitude
+            elseif state == Enum.UserInputState.Change then
+                local currentDist = (touchPositions[1] - touchPositions[2]).Magnitude
+                local delta = (currentDist - LastPinchDist) * 0.1
+                LastPinchDist = currentDist
+                Viewport.Camera.CFrame += Viewport.Camera.CFrame.LookVector * delta
+            elseif state == Enum.UserInputState.End or state == Enum.UserInputState.Cancel then
+                Pinching = false
+            end
+        end))
+
+        Viewport.Object.Parent = ViewportFrame
+        if Viewport.AutoFocus then
+            FocusCamera()
+        end
+
+        function Viewport:SetObject(Object: Instance, Clone: boolean?)
+            assert(Object, "Object cannot be nil.")
+
+            if Clone then
+                Object = Object:Clone()
+            end
+
+            if Viewport.Object then
+                Viewport.Object:Destroy()
+            end
+
+            Viewport.Object = Object
+            Viewport.Object.Parent = ViewportFrame
+
+            Groupbox:Resize()
+        end
+
+        function Viewport:SetHeight(Height: number)
+            assert(Height > 0, "Height must be greater than 0.")
+
+            Holder.Size = UDim2.new(1, 0, 0, Height)
+            Groupbox:Resize()
+        end
+
+        function Viewport:Focus()
+            if not Viewport.Object then
+                return
+            end
+
+            FocusCamera()
+        end
+
+        function Viewport:SetCamera(Camera: Instance)
+            assert(
+                Camera and typeof(Camera) == "Instance" and Camera:IsA("Camera"),
+                "Camera must be a valid Camera instance."
+            )
+
+            Viewport.Camera = Camera
+            ViewportFrame.CurrentCamera = Camera
+        end
+
+        function Viewport:SetInteractive(Interactive: boolean)
+            Viewport.Interactive = Interactive
+            ViewportFrame.Active = Interactive
+        end
+
+        function Viewport:SetVisible(Visible: boolean)
+            Viewport.Visible = Visible
+
+            Holder.Visible = Viewport.Visible
+            Groupbox:Resize()
+        end
+
+        Groupbox:Resize()
+
+        Viewport.Holder = Holder
+        table.insert(Groupbox.Elements, Viewport)
+
+        Options[Idx] = Viewport
+
+        return Viewport
+    end
+
+    function Funcs:AddPreview(Idx, Info)
+        Info = Library:Validate(Info, Templates.Preview)
+
+        local Groupbox = self
+        local Container = Groupbox.Container
+
+        local Preview = {
+            Text = Info.Text,
+            Object = if Info.Clone then (Info.Object and Info.Object:Clone()) else Info.Object,
+            Camera = if not Info.Camera then Instance.new("Camera") else Info.Camera,
+            Interactive = Info.Interactive,
+            AutoFocus = Info.AutoFocus,
+            AutoRotate = Info.AutoRotate,
+            RotationSpeed = Info.RotationSpeed,
+            CameraDistance = Info.CameraDistance,
+            CameraAngle = Info.CameraAngle,
+            SizeMode = Info.SizeMode,
+            MinHeight = Info.MinHeight,
+            MaxHeight = Info.MaxHeight,
+            AspectRatio = Info.AspectRatio,
+            ScaleFactor = Info.ScaleFactor,
+            BackgroundColor = Info.BackgroundColor,
+            FocusIndicator = Info.FocusIndicator,
+            Visible = Info.Visible,
+            Type = "Preview",
+            Callback = Info.Callback,
+            IsFocused = false,
+        }
+
+        if Preview.Object then
+            assert(
+                typeof(Preview.Object) == "Instance" and (Preview.Object:IsA("BasePart") or Preview.Object:IsA("Model")),
+                "Object must be a BasePart or Model."
+            )
+        end
+
+        assert(
+            typeof(Preview.Camera) == "Instance" and Preview.Camera:IsA("Camera"),
+            "Camera must be a valid Camera instance."
+        )
+
+        local AutoRotateConnection = nil
+        local IsDragging = false
+        local LastMousePosition = Vector2.new(0, 0)
+        local GlobalScrollConnection = nil
+        local FocusGlowTween = nil
+
+        local function GetModelSize(model)
+            if not model then return Vector3.new(4, 4, 4) end
+            
+            if model:IsA("BasePart") then
+                return model.Size
+            end
+
+            return select(2, model:GetBoundingBox())
+        end
+
+        local function CalculateDynamicSize()
+            if Preview.SizeMode == "fixed" then
+                return Info.Height
+            end
+
+            local parentSize = Container.AbsoluteSize
+            if parentSize.X == 0 or parentSize.Y == 0 then
+                return Info.Height
+            end
+
+            local newHeight = Info.Height
+
+            if Preview.SizeMode == "dynamic" then
+                local dynamicHeight = math.floor(parentSize.Y * Preview.ScaleFactor)
+                newHeight = math.clamp(dynamicHeight, Preview.MinHeight, Preview.MaxHeight)
+            elseif Preview.SizeMode == "aspect" then
+                local availableWidth = parentSize.X - 20
+                local aspectHeight = math.floor(availableWidth / Preview.AspectRatio)
+                newHeight = math.clamp(aspectHeight, Preview.MinHeight, Preview.MaxHeight)
+            end
+
+            return newHeight
+        end
+
+        local calculatedHeight = CalculateDynamicSize()
+
+        local function UpdateCamera()
+            if not Preview.Object then return end
+
+            local cf = CFrame.new(0, 0, 0) * CFrame.Angles(
+                math.rad(Preview.CameraAngle.X),
+                math.rad(Preview.CameraAngle.Y),
+                math.rad(Preview.CameraAngle.Z)
+            ) * CFrame.new(0, 0, Preview.CameraDistance)
+
+            Preview.Camera.CFrame = cf
+            Preview.Camera.Focus = CFrame.new(0, 0, 0)
+        end
+
+        local function FocusCamera()
+            if not Preview.Object then return end
+            
+            local ModelSize = GetModelSize(Preview.Object)
+            local MaxExtent = math.max(ModelSize.X, ModelSize.Y, ModelSize.Z)
+            Preview.CameraDistance = MaxExtent * 2
+            local ModelPosition = Preview.Object:GetPivot().Position
+
+            Preview.Camera.CFrame =
+                CFrame.new(ModelPosition + Vector3.new(0, MaxExtent / 2, Preview.CameraDistance), ModelPosition)
+        end
+
+        local function StartAutoRotate()
+            if AutoRotateConnection then
+                AutoRotateConnection:Disconnect()
+            end
+
+            if Preview.AutoRotate then
+                AutoRotateConnection = RunService.Heartbeat:Connect(function(dt)
+                    Preview.CameraAngle = Preview.CameraAngle + Vector3.new(0, Preview.RotationSpeed * dt * 10, 0)
+                    UpdateCamera()
+                end)
+            end
+        end
+
+        local function SetFocus(focused)
+            Preview.IsFocused = focused
+            
+            if not Preview.FocusIndicator then return end
+            
+            if FocusGlowTween then
+                FocusGlowTween:Cancel()
+                FocusGlowTween = nil
+            end
+            
+            if focused then
+                Library:Tween(FocusIndicator, Library.TweenInfo, {
+                    Transparency = 0.3
+                })
+                
+                FocusGlowTween = TweenService:Create(
+                    FocusIndicator,
+                    TweenInfo.new(1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
+                    {Transparency = 0.1}
+                )
+                FocusGlowTween:Play()
+            else
+                Library:Tween(FocusIndicator, Library.TweenInfo, {
+                    Transparency = 1
+                })
+            end
+        end
+
+        local Holder = New("Frame", {
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 0, calculatedHeight + 30),
+            Visible = Preview.Visible,
+            Parent = Container,
+        })
+
+        local TitleLabel = New("TextLabel", {
+            BackgroundTransparency = 1,
+            Position = UDim2.new(0, 12, 0, 1),
+            Size = UDim2.new(1, -20, 0, 25),
+            Text = Preview.Text,
+            TextColor3 = "FontColor",
+            TextSize = 14,
+            TextTransparency = 0.1,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            FontFace = "Font",
+            Parent = Holder,
+        })
+
+        local TitleLine = New("Frame", {
+            AnchorPoint = Vector2.new(0.5, 0),
+            BackgroundColor3 = "OutlineColor",
+            BackgroundTransparency = 0.5,
+            Position = UDim2.new(0.5, 0, 0, 26),
+            Size = UDim2.new(1, -26, 0, 1),
+            Parent = Holder,
+        })
+
+        local Box = New("Frame", {
+            BackgroundColor3 = Preview.BackgroundColor or "MainColor",
+            BorderColor3 = "OutlineColor",
+            BorderSizePixel = 1,
+            Position = UDim2.new(0, 12, 0, 35),
+            Size = UDim2.new(1, -24, 0, calculatedHeight),
+            Parent = Holder,
+        })
+
+        New("UICorner", {
+            CornerRadius = UDim.new(0, Library.CornerRadius),
+            Parent = Box,
+        })
+
+        local ViewportFrame = New("ViewportFrame", {
+            BackgroundTransparency = 1,
+            Size = UDim2.fromScale(1, 1),
+            Parent = Box,
+            CurrentCamera = Preview.Camera,
+            Active = Preview.Interactive,
+        })
+
+        New("UICorner", {
+            CornerRadius = UDim.new(0, Library.CornerRadius),
+            Parent = ViewportFrame,
+        })
+
+        local FocusIndicator = nil
+        if Preview.FocusIndicator then
+            FocusIndicator = New("UIStroke", {
+                Color = Library.Scheme.AccentColor,
+                Thickness = 3,
+                ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+                Transparency = 1,
+                Parent = ViewportFrame,
+            })
+        end
+
+        -- Mouse interaction for drag rotation
+        ViewportFrame.InputBegan:Connect(function(input)
+            if not Preview.Interactive then return end
+            
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                SetFocus(true)
+                
+                IsDragging = true
+                LastMousePosition = Vector2.new(input.Position.X, input.Position.Y)
+                Preview.AutoRotate = false
+                if AutoRotateConnection then
+                    AutoRotateConnection:Disconnect()
+                end
+                
+                Library:Tween(ViewportFrame, TweenInfo.new(0.1), {
+                    Size = UDim2.fromScale(0.98, 0.98)
+                })
+                
+                wait(0.1)
+                
+                Library:Tween(ViewportFrame, TweenInfo.new(0.1), {
+                    Size = UDim2.fromScale(1, 1)
+                })
+
+                Preview.Callback()
+            end
+        end)
+
+        ViewportFrame.InputChanged:Connect(function(input)
+            if IsDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                local delta = Vector2.new(input.Position.X, input.Position.Y) - LastMousePosition
+                Preview.CameraAngle = Preview.CameraAngle + Vector3.new(-delta.Y * 0.5, delta.X * 0.5, 0)
+                UpdateCamera()
+                LastMousePosition = Vector2.new(input.Position.X, input.Position.Y)
+            end
+        end)
+
+        ViewportFrame.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                IsDragging = false
+            end
+        end)
+
+        -- Scroll wheel zooming
+        ViewportFrame.InputChanged:Connect(function(input)
+            if not Preview.Interactive or not Preview.IsFocused then return end
+            
+            if input.UserInputType == Enum.UserInputType.MouseWheel then
+                local oldDistance = Preview.CameraDistance
+                Preview.CameraDistance = math.clamp(Preview.CameraDistance - (input.Position.Z * 2), 2, 50)
+                UpdateCamera()
+            end
+        end)
+
+        -- Lose focus when clicking outside
+        Library:GiveSignal(UserInputService.InputBegan:Connect(function(input, gameProcessed)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 and not gameProcessed then
+                local mouse = LocalPlayer:GetMouse()
+                local guiObjects = LocalPlayer.PlayerGui:GetGuiObjectsAtPosition(mouse.X, mouse.Y)
+                
+                local clickedOnViewport = false
+                for _, obj in pairs(guiObjects) do
+                    if obj == ViewportFrame then
+                        clickedOnViewport = true
+                        break
+                    end
+                end
+                
+                if not clickedOnViewport and Preview.IsFocused then
+                    SetFocus(false)
+                end
+            end
+        end))
+
+        -- Dynamic resizing connection
+        local ResizeConnection = nil
+        if Preview.SizeMode ~= "fixed" then
+            ResizeConnection = Container:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+                local newHeight = CalculateDynamicSize()
+                calculatedHeight = newHeight
+                
+                Library:Tween(Holder, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                    Size = UDim2.new(1, 0, 0, calculatedHeight + 30)
+                })
+                
+                Library:Tween(Box, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                    Size = UDim2.new(1, -24, 0, calculatedHeight)
+                })
+            end)
+        end
+
+        if Preview.Object then
+            Preview.Object.Parent = ViewportFrame
+            if Preview.Object:IsA("Model") and Preview.Object.PrimaryPart then
+                Preview.Object:SetPrimaryPartCFrame(CFrame.new(0, 0, 0))
+            elseif Preview.Object:IsA("BasePart") then
+                Preview.Object.CFrame = CFrame.new(0, 0, 0)
+            end
+        end
+
+        if Preview.AutoFocus and Preview.Object then
+            FocusCamera()
+        end
+
+        UpdateCamera()
+        StartAutoRotate()
+        SetFocus(false)
+
+        function Preview:SetObject(Object: Instance, Clone: boolean?)
+            if Clone then
+                Object = Object:Clone()
+            end
+
+            if Preview.Object then
+                Preview.Object:Destroy()
+            end
+
+            Preview.Object = Object
+            if Preview.Object then
+                Preview.Object.Parent = ViewportFrame
+                
+                if Preview.Object:IsA("Model") and Preview.Object.PrimaryPart then
+                    Preview.Object:SetPrimaryPartCFrame(CFrame.new(0, 0, 0))
+                elseif Preview.Object:IsA("BasePart") then
+                    Preview.Object.CFrame = CFrame.new(0, 0, 0)
+                end
+            end
+
+            Groupbox:Resize()
+        end
+
+        function Preview:SetHeight(Height: number)
+            assert(Height > 0, "Height must be greater than 0.")
+            calculatedHeight = Height
+            Holder.Size = UDim2.new(1, 0, 0, Height + 30)
+            Box.Size = UDim2.new(1, -24, 0, Height)
+            Groupbox:Resize()
+        end
+
+        function Preview:Focus()
+            if not Preview.Object then return end
+            FocusCamera()
+        end
+
+        function Preview:SetCamera(Camera: Instance)
+            assert(
+                Camera and typeof(Camera) == "Instance" and Camera:IsA("Camera"),
+                "Camera must be a valid Camera instance."
+            )
+
+            Preview.Camera = Camera
+            ViewportFrame.CurrentCamera = Camera
+        end
+
+        function Preview:SetInteractive(Interactive: boolean)
+            Preview.Interactive = Interactive
+            ViewportFrame.Active = Interactive
+        end
+
+        function Preview:SetAutoRotate(enabled: boolean, speed: number?)
+            Preview.AutoRotate = enabled
+            if speed then
+                Preview.RotationSpeed = speed
+            end
+            StartAutoRotate()
+        end
+
+        function Preview:SetCameraDistance(distance: number)
+            Preview.CameraDistance = distance
+            UpdateCamera()
+        end
+
+        function Preview:SetCameraAngle(angle: Vector3)
+            Preview.CameraAngle = angle
+            UpdateCamera()
+        end
+
+        function Preview:SetFocus(focused: boolean)
+            SetFocus(focused)
+        end
+
+        function Preview:ToggleFocus()
+            SetFocus(not Preview.IsFocused)
+        end
+
+        function Preview:IsFocused()
+            return Preview.IsFocused
+        end
+
+        function Preview:SetSizeMode(mode: string, options: table?)
+            Preview.SizeMode = mode
+            if options then
+                if options.MinHeight then Preview.MinHeight = options.MinHeight end
+                if options.MaxHeight then Preview.MaxHeight = options.MaxHeight end
+                if options.AspectRatio then Preview.AspectRatio = options.AspectRatio end
+                if options.ScaleFactor then Preview.ScaleFactor = options.ScaleFactor end
+            end
+            
+            if ResizeConnection then
+                ResizeConnection:Disconnect()
+                ResizeConnection = nil
+            end
+            
+            local newHeight = CalculateDynamicSize()
+            calculatedHeight = newHeight
+            
+            Holder.Size = UDim2.new(1, 0, 0, calculatedHeight + 30)
+            Box.Size = UDim2.new(1, -24, 0, calculatedHeight)
+            
+            if Preview.SizeMode ~= "fixed" then
+                ResizeConnection = Container:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+                    local newHeight = CalculateDynamicSize()
+                    calculatedHeight = newHeight
+                    
+                    Library:Tween(Holder, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                        Size = UDim2.new(1, 0, 0, calculatedHeight + 30)
+                    })
+                    
+                    Library:Tween(Box, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                        Size = UDim2.new(1, -24, 0, calculatedHeight)
+                    })
+                end)
+            end
+        end
+
+        function Preview:SetVisible(Visible: boolean)
+            Preview.Visible = Visible
+            Holder.Visible = Preview.Visible
+            Groupbox:Resize()
+        end
+
+        function Preview:Destroy()
+            if AutoRotateConnection then
+                AutoRotateConnection:Disconnect()
+            end
+            if ResizeConnection then
+                ResizeConnection:Disconnect()
+            end
+            if FocusGlowTween then
+                FocusGlowTween:Cancel()
+            end
+            Holder:Destroy()
+        end
+
+        Groupbox:Resize()
+
+        Preview.Holder = Holder
+        table.insert(Groupbox.Elements, Preview)
+
+        Options[Idx] = Preview
+
+        return Preview
+    end
+
+    function Funcs:AddImage(Idx, Info)
+        Info = Library:Validate(Info, Templates.Image)
+
+        local Groupbox = self
+        local Container = Groupbox.Container
+
+        local Image = {
+            Image = Info.Image,
+            Color = Info.Color,
+            RectOffset = Info.RectOffset,
+            RectSize = Info.RectSize,
+            Height = Info.Height,
+            ScaleType = Info.ScaleType,
+            Transparency = Info.Transparency,
+
+            Visible = Info.Visible,
+            Type = "Image",
+        }
+
+        local Holder = New("Frame", {
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 0, Info.Height),
+            Visible = Image.Visible,
+            Parent = Container,
+        })
+
+        local Box = New("Frame", {
+            AnchorPoint = Vector2.new(0, 1),
+            BackgroundColor3 = "MainColor",
+            BorderColor3 = "OutlineColor",
+            BorderSizePixel = 1,
+            Position = UDim2.fromScale(0, 1),
+            Size = UDim2.fromScale(1, 1),
+            Parent = Holder,
+        })
+
+        New("UIPadding", {
+            PaddingBottom = UDim.new(0, 3),
+            PaddingLeft = UDim.new(0, 8),
+            PaddingRight = UDim.new(0, 8),
+            PaddingTop = UDim.new(0, 4),
+            Parent = Box,
+        })
+
+        local ImageProperties = {
+            BackgroundTransparency = 1,
+            Size = UDim2.fromScale(1, 1),
+            Image = Image.Image,
+            ImageTransparency = Image.Transparency,
+            ImageColor3 = Image.Color,
+            ImageRectOffset = Image.RectOffset,
+            ImageRectSize = Image.RectSize,
+            ScaleType = Image.ScaleType,
+            Parent = Box,
+        }
+
+        if
+            not (
+                ImageProperties.Image:match("rbxasset")
+                or ImageProperties.Image:match("roblox%.com/asset/%?id=")
+                or ImageProperties.Image:match("rbxthumb://type=AvatarHeadShot")
+            )
+        then
+            local Icon = Library:GetIcon(ImageProperties.Image)
+            assert(Icon, "Image must be a valid Roblox asset or a valid URL or a valid lucide icon.")
+
+            ImageProperties.Image = Icon.Url
+            ImageProperties.ImageRectOffset = Icon.ImageRectOffset
+            ImageProperties.ImageRectSize = Icon.ImageRectSize
+        end
+
+        local ImageLabel = New("ImageLabel", ImageProperties)
+
+        function Image:SetHeight(Height: number)
+            assert(Height > 0, "Height must be greater than 0.")
+
+            Image.Height = Height
+            Holder.Size = UDim2.new(1, 0, 0, Height)
+            Groupbox:Resize()
+        end
+
+        function Image:SetImage(NewImage: string)
+            assert(typeof(NewImage) == "string", "Image must be a string.")
+
+            if
+                not (
+                    NewImage:match("rbxasset")
+                    or NewImage:match("roblox%.com/asset/%?id=")
+                    or NewImage:match("rbxthumb://type=AvatarHeadShot")
+                )
+            then
+                local Icon = Library:GetIcon(NewImage)
+                assert(Icon, "Image must be a valid Roblox asset or a valid URL or a valid lucide icon.")
+
+                NewImage = Icon.Url
+                Image.RectOffset = Icon.ImageRectOffset
+                Image.RectSize = Icon.ImageRectSize
+            end
+
+            ImageLabel.Image = NewImage
+            Image.Image = NewImage
+        end
+
+        function Image:SetColor(Color: Color3)
+            assert(typeof(Color) == "Color3", "Color must be a Color3 value.")
+
+            ImageLabel.ImageColor3 = Color
+            Image.Color = Color
+        end
+
+        function Image:SetRectOffset(RectOffset: Vector2)
+            assert(typeof(RectOffset) == "Vector2", "RectOffset must be a Vector2 value.")
+
+            ImageLabel.ImageRectOffset = RectOffset
+            Image.RectOffset = RectOffset
+        end
+
+        function Image:SetRectSize(RectSize: Vector2)
+            assert(typeof(RectSize) == "Vector2", "RectSize must be a Vector2 value.")
+
+            ImageLabel.ImageRectSize = RectSize
+            Image.RectSize = RectSize
+        end
+
+        function Image:SetScaleType(ScaleType: Enum.ScaleType)
+            assert(
+                typeof(ScaleType) == "EnumItem" and ScaleType:IsA("ScaleType"),
+                "ScaleType must be a valid Enum.ScaleType."
+            )
+
+            ImageLabel.ScaleType = ScaleType
+            Image.ScaleType = ScaleType
+        end
+
+        function Image:SetTransparency(Transparency: number)
+            assert(typeof(Transparency) == "number", "Transparency must be a number between 0 and 1.")
+            assert(Transparency >= 0 and Transparency <= 1, "Transparency must be between 0 and 1.")
+
+            ImageLabel.ImageTransparency = Transparency
+            Image.Transparency = Transparency
+        end
+
+        function Image:SetVisible(Visible: boolean)
+            Image.Visible = Visible
+
+            Holder.Visible = Image.Visible
+            Groupbox:Resize()
+        end
+
+        Groupbox:Resize()
+
+        Image.Holder = Holder
+        table.insert(Groupbox.Elements, Image)
+
+        Options[Idx] = Image
+
+        return Image
+    end
+
     function Funcs:AddDependencyBox()
         local Groupbox = self
         local Container = Groupbox.Container
@@ -4558,8 +5627,13 @@ function Library:Notify(...)
         TimerFill.Size = UDim2.fromScale(0, 1)
     end
     if Data.SoundId then
+        local SoundId = Data.SoundId
+        if typeof(SoundId) == "number" then
+            SoundId = `rbxassetid://{SoundId}`
+        end
+
         New("Sound", {
-            SoundId = "rbxassetid://" .. tostring(Data.SoundId):gsub("rbxassetid://", ""),
+            SoundId = SoundId,
             Volume = 3,
             PlayOnRemove = true,
             Parent = SoundService,
@@ -4627,6 +5701,9 @@ function Library:CreateWindow(WindowInfo)
 
     local MainFrame
     local SearchBox
+    local CurrentTabInfo
+    local CurrentTabLabel
+    local CurrentTabDescription
     local ResizeButton
     local Tabs
     local Container
@@ -4721,7 +5798,7 @@ function Library:CreateWindow(WindowInfo)
 
         if WindowInfo.Icon then
             New("ImageLabel", {
-                Image = tonumber(WindowInfo.Icon) and "rbxassetid://" .. WindowInfo.Icon or WindowInfo.Icon,
+                Image = if tonumber(WindowInfo.Icon) then `rbxassetid://{WindowInfo.Icon}` else WindowInfo.Icon,
                 Size = WindowInfo.IconSize,
                 Parent = TitleHolder,
             })
@@ -4741,15 +5818,74 @@ function Library:CreateWindow(WindowInfo)
             Parent = TitleHolder,
         })
 
-        --// Search Box
-        SearchBox = New("TextBox", {
+        --// Top Right Bar
+        local RightWrapper = New("Frame", {
+            BackgroundTransparency = 1,
             AnchorPoint = Vector2.new(0, 0.5),
-            BackgroundColor3 = "MainColor",
-            PlaceholderText = "Search",
             Position = UDim2.new(0.3, 8, 0.5, 0),
             Size = UDim2.new(0.7, -57, 1, -16),
-            TextScaled = true,
             Parent = TopBar,
+        })
+
+        New("UIListLayout", {
+            FillDirection = Enum.FillDirection.Horizontal,
+            HorizontalAlignment = Enum.HorizontalAlignment.Right,
+            VerticalAlignment = Enum.VerticalAlignment.Center,
+            Padding = UDim.new(0, 8),
+            Parent = RightWrapper,
+        })
+
+        CurrentTabInfo = New("Frame", {
+            Size = UDim2.fromScale(WindowInfo.DisableSearch and 1 or 0.5, 1),
+            Visible = false,
+            BackgroundTransparency = 1,
+            Parent = RightWrapper,
+        })
+
+        New("UIListLayout", {
+            FillDirection = Enum.FillDirection.Vertical,
+            HorizontalAlignment = Enum.HorizontalAlignment.Left,
+            VerticalAlignment = Enum.VerticalAlignment.Center,
+            Parent = CurrentTabInfo,
+        })
+
+        New("UIPadding", {
+            PaddingBottom = UDim.new(0, 8),
+            PaddingLeft = UDim.new(0, 8),
+            PaddingRight = UDim.new(0, 8),
+            PaddingTop = UDim.new(0, 8),
+            Parent = CurrentTabInfo,
+        })
+
+        CurrentTabLabel = New("TextLabel", {
+            BackgroundTransparency = 1,
+            Size = UDim2.fromScale(1, 0),
+            AutomaticSize = Enum.AutomaticSize.Y,
+            Text = "",
+            TextSize = 14,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            Parent = CurrentTabInfo,
+        })
+
+        CurrentTabDescription = New("TextLabel", {
+            BackgroundTransparency = 1,
+            Size = UDim2.fromScale(1, 0),
+            AutomaticSize = Enum.AutomaticSize.Y,
+            Text = "",
+            TextWrapped = true,
+            TextSize = 14,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            TextTransparency = 0.5,
+            Parent = CurrentTabInfo,
+        })
+
+        SearchBox = New("TextBox", {
+            BackgroundColor3 = "MainColor",
+            PlaceholderText = "Search",
+            Size = UDim2.fromScale(1, 1),
+            TextScaled = true,
+            Visible = not (WindowInfo.DisableSearch or false),
+            Parent = RightWrapper,
         })
         New("UICorner", {
             CornerRadius = UDim.new(0, WindowInfo.CornerRadius),
@@ -4898,7 +6034,22 @@ function Library:CreateWindow(WindowInfo)
     --// Window Table \\--
     local Window = {}
 
-    function Window:AddTab(Name: string, Icon)
+    function Window:AddTab(...)
+        local Name = nil
+        local Icon = nil
+        local Description = nil
+
+        if select("#", ...) == 1 and typeof(...) == "table" then
+            local Info = select(1, ...)
+            Name = Info.Name or "Tab"
+            Icon = Info.Icon
+            Description = Info.Description
+        else
+            Name = select(1, ...)
+            Icon = select(2, ...)
+            Description = select(3, ...)
+        end
+
         local TabButton: TextButton
         local TabLabel
         local TabIcon
@@ -5473,6 +6624,14 @@ function Library:CreateWindow(WindowInfo)
                     ImageTransparency = 0,
                 }):Play()
             end
+
+            if Description then
+                CurrentTabInfo.Visible = true
+                SearchBox.Size = UDim2.fromScale(0.5, 1)
+                CurrentTabLabel.Text = Name
+                CurrentTabDescription.Text = Description
+            end
+
             TabContainer.Visible = true
 
             Library.ActiveTab = Tab
@@ -5491,6 +6650,9 @@ function Library:CreateWindow(WindowInfo)
                 }):Play()
             end
             TabContainer.Visible = false
+
+            SearchBox.Size = UDim2.fromScale(1, 1)
+            CurrentTabInfo.Visible = false
 
             Library.ActiveTab = nil
         end
