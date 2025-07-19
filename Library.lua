@@ -6278,6 +6278,7 @@ function Library:CreateLoader(IconId, Duration)
             IconFrame.Image = Icon.Url
             IconFrame.ImageRectOffset = Icon.ImageRectOffset
             IconFrame.ImageRectSize = Icon.ImageRectSize
+            IconFrame.ImageColor3 = Library.Scheme.AccentColor  -- Use dynamic accent color (Color3)
         end
     end
 
@@ -6288,7 +6289,7 @@ function Library:CreateLoader(IconId, Duration)
         BorderSizePixel = 0,
         Size = UDim2.new(1, 0, 1, 0),
         Image = "rbxassetid://18720640102",
-        ImageColor3 = Library.Scheme.AccentColor,
+        ImageColor3 = Library.Scheme.AccentColor,  -- Use dynamic accent color (Color3)
         ImageTransparency = 1,
         AnchorPoint = Vector2.new(0.5, 0.5),
         Position = UDim2.fromScale(0.5, 0.5),
