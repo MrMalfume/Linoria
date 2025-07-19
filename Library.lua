@@ -2213,92 +2213,30 @@ do
     end
     function Funcs:AddColorPicker(Idx, Info)
         Info = Library:Validate(Info, Templates.ColorPicker)
-    
+
         local ParentObj = self
         local ToggleLabel = ParentObj.TextLabel
-    
+
         local ColorPicker = {
             Value = Info.Default,
             Transparency = Info.Transparency or 0,
-            RainbowEnabled = false,
-            RainbowConnection = nil,
-            RainbowSpeed = Info.RainbowSpeed or 0.5, -- Medium speed (0.5 cycles per second)
-    
+
             Callback = Info.Callback,
             Changed = Info.Changed,
-    
+
             Type = "ColorPicker",
         }
         ColorPicker.Hue, ColorPicker.Sat, ColorPicker.Vib = ColorPicker.Value:ToHSV()
-    
-        -- Create a container for the colorpicker and rainbow toggle
-        local Container = New("Frame", {
-            BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 0, 20),
-            Parent = ToggleLabel,
-        })
-    
-        -- Add layout for horizontal arrangement
-        local Layout = New("UIListLayout", {
-            FillDirection = Enum.FillDirection.Horizontal,
-            HorizontalAlignment = Enum.HorizontalAlignment.Right,
-            Padding = UDim.new(0, 6),
-            SortOrder = Enum.SortOrder.LayoutOrder,
-            Parent = Container,
-        })
-    
-        -- Create rainbow toggle label (showing the colorpicker name)
-        local LabelText = "Rainbow"
-        if Info.Title and type(Info.Title) == "string" then
-            LabelText = Info.Title
-        elseif Info.Name and type(Info.Name) == "string" then
-            LabelText = Info.Name
-        elseif Info.Text and type(Info.Text) == "string" then
-            LabelText = Info.Text
-        end
-        
-        local RainbowLabel = New("TextLabel", {
-            BackgroundTransparency = 1,
-            Size = UDim2.new(0, 0, 1, 0),
-            AutomaticSize = Enum.AutomaticSize.X,
-            Text = LabelText .. ":",
-            TextColor3 = "FontColor",
-            TextSize = 14,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            Font = Enum.Font.GothamMedium,
-            LayoutOrder = 1,
-            Parent = Container,
-        })
-    
-        -- Create rainbow toggle button
-        local RainbowToggle = New("TextButton", {
-            BackgroundColor3 = "MainColor",
-            BorderColor3 = "OutlineColor",
-            BorderSizePixel = 1,
-            Size = UDim2.fromOffset(40, 18),
-            Text = "OFF",
-            TextColor3 = "FontColor",
-            TextSize = 12,
-            Font = Enum.Font.GothamMedium,
-            LayoutOrder = 2,
-            Parent = Container,
-        })
-    
-        local RainbowToggleCorner = New("UICorner", {
-            CornerRadius = UDim.new(0, 4),
-            Parent = RainbowToggle,
-        })
-    
+
         local Holder = New("TextButton", {
             BackgroundColor3 = ColorPicker.Value,
             BorderColor3 = Library:GetDarkerColor(ColorPicker.Value),
             BorderSizePixel = 1,
             Size = UDim2.fromOffset(18, 18),
             Text = "",
-            LayoutOrder = 3,
-            Parent = Container,
+            Parent = ToggleLabel,
         })
-    
+
         local HolderTransparency = New("ImageLabel", {
             Image = ObsidianImageManager.GetAsset("TransparencyTexture"),
             ImageTransparency = (1 - ColorPicker.Transparency),
@@ -2307,46 +2245,7 @@ do
             TileSize = UDim2.fromOffset(9, 9),
             Parent = Holder,
         })
-    
-        -- Rainbow toggle functionality
-        local function ToggleRainbow()
-            ColorPicker.RainbowEnabled = not ColorPicker.RainbowEnabled
-            
-            if ColorPicker.RainbowEnabled then
-                -- Enable rainbow mode
-                RainbowToggle.BackgroundColor3 = Library.Scheme.AccentColor
-                RainbowToggle.Text = "ON"
-                
-                -- Update registry for theme compatibility
-                Library.Registry[RainbowToggle].BackgroundColor3 = "AccentColor"
-                
-                -- Start rainbow color cycling
-                ColorPicker.RainbowConnection = Library:GiveSignal(RunService.Heartbeat:Connect(function()
-                    local currentTime = tick()
-                    local newHue = (currentTime * ColorPicker.RainbowSpeed) % 1
-                    
-                    ColorPicker.Hue = newHue
-                    ColorPicker:Update()
-                end))
-            else
-                -- Disable rainbow mode
-                RainbowToggle.BackgroundColor3 = Library.Scheme.MainColor
-                RainbowToggle.Text = "OFF"
-                
-                -- Update registry for theme compatibility
-                Library.Registry[RainbowToggle].BackgroundColor3 = "MainColor"
-                
-                -- Stop rainbow color cycling
-                if ColorPicker.RainbowConnection then
-                    ColorPicker.RainbowConnection:Disconnect()
-                    ColorPicker.RainbowConnection = nil
-                end
-            end
-        end
-    
-        -- Connect rainbow toggle
-        RainbowToggle.MouseButton1Click:Connect(ToggleRainbow)
-    
+
         --// Color Menu \\--
         local ColorMenu = Library:AddContextMenu(
             Holder,
@@ -2358,7 +2257,7 @@ do
         )
         ColorMenu.List.Padding = UDim.new(0, 8)
         ColorPicker.ColorMenu = ColorMenu
-    
+
         New("UIPadding", {
             PaddingBottom = UDim.new(0, 6),
             PaddingLeft = UDim.new(0, 6),
@@ -2366,7 +2265,7 @@ do
             PaddingTop = UDim.new(0, 6),
             Parent = ColorMenu.Menu,
         })
-    
+
         if typeof(Info.Title) == "string" then
             New("TextLabel", {
                 BackgroundTransparency = 1,
@@ -2377,18 +2276,18 @@ do
                 Parent = ColorMenu.Menu,
             })
         end
-    
+
         local ColorHolder = New("Frame", {
             BackgroundTransparency = 1,
             Size = UDim2.new(1, 0, 0, 200),
             Parent = ColorMenu.Menu,
         })
-            New("UIListLayout", {
-                FillDirection = Enum.FillDirection.Horizontal,
-                Padding = UDim.new(0, 6),
+        New("UIListLayout", {
+            FillDirection = Enum.FillDirection.Horizontal,
+            Padding = UDim.new(0, 6),
             Parent = ColorHolder,
         })
-    
+
         --// Sat Map
         local SatVipMap = New("ImageButton", {
             BackgroundColor3 = ColorPicker.Value,
@@ -2396,7 +2295,7 @@ do
             Size = UDim2.fromOffset(200, 200),
             Parent = ColorHolder,
         })
-    
+
         local SatVibCursor = New("Frame", {
             AnchorPoint = Vector2.new(0.5, 0.5),
             BackgroundColor3 = "White",
@@ -2411,7 +2310,7 @@ do
             Color = "Dark",
             Parent = SatVibCursor,
         })
-    
+
         --// Hue
         local HueSelector = New("TextButton", {
             Size = UDim2.fromOffset(16, 200),
@@ -2423,7 +2322,7 @@ do
             Rotation = 90,
             Parent = HueSelector,
         })
-    
+
         local HueCursor = New("Frame", {
             AnchorPoint = Vector2.new(0.5, 0.5),
             BackgroundColor3 = "White",
@@ -2433,7 +2332,7 @@ do
             Size = UDim2.new(1, 2, 0, 1),
             Parent = HueSelector,
         })
-    
+
         --// Alpha
         local TransparencySelector, TransparencyColor, TransparencyCursor
         if Info.Transparency then
@@ -2444,7 +2343,7 @@ do
                 TileSize = UDim2.fromOffset(8, 8),
                 Parent = ColorHolder,
             })
-    
+
             TransparencyColor = New("Frame", {
                 BackgroundColor3 = ColorPicker.Value,
                 Size = UDim2.fromScale(1, 1),
@@ -2458,7 +2357,7 @@ do
                 }),
                 Parent = TransparencyColor,
             })
-    
+
             TransparencyCursor = New("Frame", {
                 AnchorPoint = Vector2.new(0.5, 0.5),
                 BackgroundColor3 = "White",
@@ -2469,7 +2368,7 @@ do
                 Parent = TransparencySelector,
             })
         end
-    
+
         local InfoHolder = New("Frame", {
             BackgroundTransparency = 1,
             Size = UDim2.new(1, 0, 0, 20),
@@ -2481,7 +2380,7 @@ do
             Padding = UDim.new(0, 8),
             Parent = InfoHolder,
         })
-    
+
         local HueBox = New("TextBox", {
             BackgroundColor3 = "MainColor",
             BorderColor3 = "OutlineColor",
@@ -2492,7 +2391,7 @@ do
             TextSize = 14,
             Parent = InfoHolder,
         })
-    
+
         local RgbBox = New("TextBox", {
             BackgroundColor3 = "MainColor",
             BorderColor3 = "OutlineColor",
@@ -2503,7 +2402,7 @@ do
             TextSize = 14,
             Parent = InfoHolder,
         })
-    
+
         --// Context Menu \\--
         local ContextMenu = Library:AddContextMenu(Holder, UDim2.fromOffset(93, 0), function()
             return { Holder.AbsoluteSize.X + 1.5, 0.5 }
@@ -2518,25 +2417,21 @@ do
                     TextSize = 14,
                     Parent = ContextMenu.Menu,
                 })
-    
+
                 Button.MouseButton1Click:Connect(function()
                     Library:SafeCallback(Func)
                     ContextMenu:Close()
                 end)
             end
-    
+
             CreateButton("Copy color", function()
                 Library.CopiedColor = { ColorPicker.Value, ColorPicker.Transparency }
             end)
-    
+
             CreateButton("Paste color", function()
                 ColorPicker:SetValueRGB(Library.CopiedColor[1], Library.CopiedColor[2])
             end)
-    
-            CreateButton("Toggle Rainbow", function()
-                ToggleRainbow()
-            end)
-    
+
             if setclipboard then
                 CreateButton("Copy Hex", function()
                     setclipboard(tostring(ColorPicker.Value:ToHex()))
@@ -2550,35 +2445,35 @@ do
                 end)
             end
         end
-    
+
         --// End \\--
-    
+
         function ColorPicker:SetHSVFromRGB(Color)
             ColorPicker.Hue, ColorPicker.Sat, ColorPicker.Vib = Color:ToHSV()
         end
-    
+
         function ColorPicker:Display()
             if Library.Unloaded then
-                    return
-                end
-    
+                return
+            end
+
             ColorPicker.Value = Color3.fromHSV(ColorPicker.Hue, ColorPicker.Sat, ColorPicker.Vib)
-    
+
             Holder.BackgroundColor3 = ColorPicker.Value
             Holder.BorderColor3 = Library:GetDarkerColor(ColorPicker.Value)
             HolderTransparency.ImageTransparency = (1 - ColorPicker.Transparency)
-    
+
             SatVipMap.BackgroundColor3 = Color3.fromHSV(ColorPicker.Hue, 1, 1)
             if TransparencyColor then
                 TransparencyColor.BackgroundColor3 = ColorPicker.Value
             end
-    
+
             SatVibCursor.Position = UDim2.fromScale(ColorPicker.Sat, 1 - ColorPicker.Vib)
             HueCursor.Position = UDim2.fromScale(0.5, ColorPicker.Hue)
             if TransparencyCursor then
                 TransparencyCursor.Position = UDim2.fromScale(0.5, ColorPicker.Transparency)
             end
-    
+
             HueBox.Text = "#" .. ColorPicker.Value:ToHex()
             RgbBox.Text = table.concat({
                 math.floor(ColorPicker.Value.R * 255),
@@ -2586,90 +2481,70 @@ do
                 math.floor(ColorPicker.Value.B * 255),
             }, ", ")
         end
-    
+
         function ColorPicker:Update()
             ColorPicker:Display()
-    
+
             Library:SafeCallback(ColorPicker.Callback, ColorPicker.Value)
             Library:SafeCallback(ColorPicker.Changed, ColorPicker.Value)
         end
-    
+
         function ColorPicker:OnChanged(Func)
             ColorPicker.Changed = Func
         end
-    
+
         function ColorPicker:SetValue(HSV, Transparency)
             local Color = Color3.fromHSV(HSV[1], HSV[2], HSV[3])
-    
+
             ColorPicker.Transparency = Info.Transparency and Transparency or 0
             ColorPicker:SetHSVFromRGB(Color)
             ColorPicker:Update()
         end
-    
+
         function ColorPicker:SetValueRGB(Color, Transparency)
             ColorPicker.Transparency = Info.Transparency and Transparency or 0
             ColorPicker:SetHSVFromRGB(Color)
             ColorPicker:Update()
         end
-    
-        function ColorPicker:SetRainbowEnabled(Enabled)
-            if ColorPicker.RainbowEnabled ~= Enabled then
-                ToggleRainbow()
-            end
-        end
-    
-        function ColorPicker:SetRainbowSpeed(Speed)
-            ColorPicker.RainbowSpeed = Speed or 0.5
-        end
-    
+
         Holder.MouseButton1Click:Connect(ColorMenu.Toggle)
         Holder.MouseButton2Click:Connect(ContextMenu.Toggle)
-    
+
         SatVipMap.InputBegan:Connect(function(Input: InputObject)
-            -- Disable rainbow when manually changing color
-            if ColorPicker.RainbowEnabled then
-                ToggleRainbow()
-            end
-    
             while IsClickInput(Input) do
                 local MinX = SatVipMap.AbsolutePosition.X
                 local MaxX = MinX + SatVipMap.AbsoluteSize.X
                 local LocationX = math.clamp(Mouse.X, MinX, MaxX)
-    
+
                 local MinY = SatVipMap.AbsolutePosition.Y
                 local MaxY = MinY + SatVipMap.AbsoluteSize.Y
                 local LocationY = math.clamp(Mouse.Y, MinY, MaxY)
-    
+
                 local OldSat = ColorPicker.Sat
                 local OldVib = ColorPicker.Vib
                 ColorPicker.Sat = (LocationX - MinX) / (MaxX - MinX)
                 ColorPicker.Vib = 1 - ((LocationY - MinY) / (MaxY - MinY))
-    
+
                 if ColorPicker.Sat ~= OldSat or ColorPicker.Vib ~= OldVib then
                     ColorPicker:Update()
                 end
-    
+
                 RunService.RenderStepped:Wait()
             end
         end)
         HueSelector.InputBegan:Connect(function(Input: InputObject)
-            -- Disable rainbow when manually changing hue
-            if ColorPicker.RainbowEnabled then
-                ToggleRainbow()
-            end
-    
             while IsClickInput(Input) do
                 local Min = HueSelector.AbsolutePosition.Y
                 local Max = Min + HueSelector.AbsoluteSize.Y
                 local Location = math.clamp(Mouse.Y, Min, Max)
-    
+
                 local OldHue = ColorPicker.Hue
                 ColorPicker.Hue = (Location - Min) / (Max - Min)
-    
+
                 if ColorPicker.Hue ~= OldHue then
                     ColorPicker:Update()
                 end
-    
+
                 RunService.RenderStepped:Wait()
             end
         end)
@@ -2679,62 +2554,52 @@ do
                     local Min = TransparencySelector.AbsolutePosition.Y
                     local Max = TransparencySelector.AbsolutePosition.Y + TransparencySelector.AbsoluteSize.Y
                     local Location = math.clamp(Mouse.Y, Min, Max)
-    
+
                     local OldTransparency = ColorPicker.Transparency
                     ColorPicker.Transparency = (Location - Min) / (Max - Min)
-    
+
                     if ColorPicker.Transparency ~= OldTransparency then
                         ColorPicker:Update()
                     end
-    
+
                     RunService.RenderStepped:Wait()
                 end
             end)
         end
-    
+
         HueBox.FocusLost:Connect(function(Enter)
             if not Enter then
                 return
             end
-    
-            -- Disable rainbow when manually setting color
-            if ColorPicker.RainbowEnabled then
-                ToggleRainbow()
-            end
-    
+
             local Success, Color = pcall(Color3.fromHex, HueBox.Text)
             if Success and typeof(Color) == "Color3" then
                 ColorPicker.Hue, ColorPicker.Sat, ColorPicker.Vib = Color:ToHSV()
             end
-    
+
             ColorPicker:Update()
         end)
         RgbBox.FocusLost:Connect(function(Enter)
             if not Enter then
                 return
             end
-    
-            -- Disable rainbow when manually setting color
-            if ColorPicker.RainbowEnabled then
-                ToggleRainbow()
-        end
-    
+
             local R, G, B = RgbBox.Text:match("(%d+),%s*(%d+),%s*(%d+)")
             if R and G and B then
                 ColorPicker:SetHSVFromRGB(Color3.fromRGB(R, G, B))
             end
-    
+
             ColorPicker:Update()
         end)
-    
+
         ColorPicker:Display()
-    
+
         if ParentObj.Addons then
             table.insert(ParentObj.Addons, ColorPicker)
         end
-    
+
         Options[Idx] = ColorPicker
-    
+
         return self
     end
 
