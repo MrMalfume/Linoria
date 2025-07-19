@@ -6252,7 +6252,7 @@ function Library:CreateLoader(IconId, Duration)
         Name = "Loader",
         Parent = LoaderGui,
         AnchorPoint = Vector2.new(0.5, 0.5),
-        BackgroundColor3 = "BackgroundColor",
+        BackgroundColor3 = Color3.new(0, 0, 0),
         BackgroundTransparency = 1,
         BorderSizePixel = 0,
         Position = UDim2.new(0.5, 0, 0.5, 0),
@@ -6269,7 +6269,6 @@ function Library:CreateLoader(IconId, Duration)
         Size = UDim2.new(0, 750, 0, 750),
         ZIndex = 100,
         ImageTransparency = 1,
-        ImageColor3 = "AccentColor",
     })
 
     -- Set the icon
@@ -6279,6 +6278,7 @@ function Library:CreateLoader(IconId, Duration)
             IconFrame.Image = Icon.Url
             IconFrame.ImageRectOffset = Icon.ImageRectOffset
             IconFrame.ImageRectSize = Icon.ImageRectSize
+            IconFrame.ImageColor3 = "AccentColor"  -- Use dynamic accent color
         end
     end
 
@@ -6289,87 +6289,48 @@ function Library:CreateLoader(IconId, Duration)
         BorderSizePixel = 0,
         Size = UDim2.new(1, 0, 1, 0),
         Image = "rbxassetid://18720640102",
-        ImageColor3 = "AccentColor",
+        ImageColor3 = "AccentColor",  -- Use dynamic accent color
         ImageTransparency = 1,
         AnchorPoint = Vector2.new(0.5, 0.5),
         Position = UDim2.fromScale(0.5, 0.5),
     })
 
-    -- Create a subtle gradient overlay for better depth
-    local GradientFrame = New("Frame", {
-        Name = "Gradient",
-        Parent = LoaderFrame,
-        BackgroundColor3 = "MainColor",
-        BackgroundTransparency = 1,
-        BorderSizePixel = 0,
-        Size = UDim2.new(1, 0, 1, 0),
-        ZIndex = 50,
-    })
-    
-    local Gradient = New("UIGradient", {
-        Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Library.Scheme.BackgroundColor),
-            ColorSequenceKeypoint.new(0.5, Library:GetBetterColor(Library.Scheme.MainColor, -5)),
-            ColorSequenceKeypoint.new(1, Library.Scheme.BackgroundColor)
-        }),
-        Rotation = 45,
-        Parent = GradientFrame,
-    })
-
-    -- Animate the loader with dynamic colors
-    local BackgroundTween = TweenService:Create(LoaderFrame, TweenInfo.new(0.55, Enum.EasingStyle.Quint), {
-        BackgroundTransparency = 0.1
-    })
-    
-    local GradientTween = TweenService:Create(GradientFrame, TweenInfo.new(0.55, Enum.EasingStyle.Quint), {
-        BackgroundTransparency = 0.3
-    })
-    
-    BackgroundTween:Play()
-    GradientTween:Play()
+    -- Animate the loader
+    TweenService:Create(LoaderFrame, TweenInfo.new(0.55, Enum.EasingStyle.Quint), {
+        BackgroundTransparency = 0.5
+    }):Play()
 
     local Event = Instance.new('BindableEvent')
 
     task.delay(0.5, function()
-        local IconTween = TweenService:Create(IconFrame, TweenInfo.new(0.75, Enum.EasingStyle.Quint), {
+        TweenService:Create(IconFrame, TweenInfo.new(0.75, Enum.EasingStyle.Quint), {
             ImageTransparency = 0.01,
             Size = UDim2.new(0, 200, 0, 200)
-        })
-        IconTween:Play()
+        }):Play()
 
         task.delay(0.25, function()
-            local VignetteTween = TweenService:Create(Vignette, TweenInfo.new(5), {
+            TweenService:Create(Vignette, TweenInfo.new(5), {
                 ImageTransparency = 0.2
-            })
-            VignetteTween:Play()
+            }):Play()
 
             task.wait(Duration or 4.5)
 
-            local VignetteEndTween = TweenService:Create(Vignette, TweenInfo.new(3, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut), {
+            TweenService:Create(Vignette, TweenInfo.new(3, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut), {
                 Size = UDim2.new(2, 0, 2, 0)
-            })
-            VignetteEndTween:Play()
+            }):Play()
 
-            local IconEndTween = TweenService:Create(IconFrame, TweenInfo.new(0.75, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut), {
+            TweenService:Create(IconFrame, TweenInfo.new(0.75, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut), {
                 ImageTransparency = 1,
-            })
-            IconEndTween:Play()
+            }):Play()
 
-            local BackgroundEndTween = TweenService:Create(LoaderFrame, TweenInfo.new(1.5, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut), {
+            TweenService:Create(LoaderFrame, TweenInfo.new(1.5, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut), {
                 BackgroundTransparency = 1
-            })
-            BackgroundEndTween:Play()
-            
-            local GradientEndTween = TweenService:Create(GradientFrame, TweenInfo.new(1.5, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut), {
-                BackgroundTransparency = 1
-            })
-            GradientEndTween:Play()
+            }):Play()
 
             task.delay(0.1, function()
-                local VignetteFinalTween = TweenService:Create(Vignette, TweenInfo.new(1, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut), {
+                TweenService:Create(Vignette, TweenInfo.new(1, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut), {
                     ImageTransparency = 1
-                })
-                VignetteFinalTween:Play()
+                }):Play()
 
                 task.wait(0.2)
 
