@@ -2248,11 +2248,20 @@ do
         })
     
         -- Create rainbow toggle label (showing the colorpicker name)
+        local LabelText = "Rainbow"
+        if Info.Title and type(Info.Title) == "string" then
+            LabelText = Info.Title
+        elseif Info.Name and type(Info.Name) == "string" then
+            LabelText = Info.Name
+        elseif Info.Text and type(Info.Text) == "string" then
+            LabelText = Info.Text
+        end
+        
         local RainbowLabel = New("TextLabel", {
             BackgroundTransparency = 1,
             Size = UDim2.new(0, 0, 1, 0),
             AutomaticSize = Enum.AutomaticSize.X,
-            Text = (Info.Title or Info.Name or "Rainbow") .. ":",
+            Text = LabelText .. ":",
             TextColor3 = "FontColor",
             TextSize = 14,
             TextXAlignment = Enum.TextXAlignment.Left,
