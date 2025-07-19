@@ -6920,31 +6920,95 @@ function Library:CreateWindow(WindowInfo)
                 })
 
                 local BoxIcon = Library:GetIcon(Info.IconName)
-                local IconContainer
                 if BoxIcon then
-                    -- Create icon container box
-                    IconContainer = New("Frame", {
-                        BackgroundColor3 = "MainColor",
+                    -- Create main container for icon and text
+                    local IconTextContainer = New("Frame", {
+                        BackgroundTransparency = 1,
                         Position = UDim2.fromOffset(8, 8),
-                        Size = UDim2.fromOffset(18, 18),
+                        Size = UDim2.fromOffset(200, 40), -- Wider to accommodate text
                         Parent = GroupboxHolder,
                     })
-                    New("UICorner", {
-                        CornerRadius = UDim.new(0, 3),
+                    
+                    -- Create fancy gradient icon container
+                    local IconContainer = New("Frame", {
+                        BackgroundColor3 = Color3.fromRGB(45, 45, 55), -- Base dark color
+                        Position = UDim2.fromOffset(0, 4),
+                        Size = UDim2.fromOffset(32, 32),
+                        Parent = IconTextContainer,
+                    })
+                    
+                    -- Add gradient effect
+                    New("UIGradient", {
+                        Color = ColorSequence.new({
+                            ColorSequenceKeypoint.new(0, Color3.fromRGB(60, 60, 80)),
+                            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(45, 45, 65)),
+                            ColorSequenceKeypoint.new(1, Color3.fromRGB(35, 35, 50))
+                        }),
+                        Rotation = 45, -- Diagonal gradient
                         Parent = IconContainer,
                     })
-                    Library:MakeOutline(IconContainer, 3)
+                    
+                    -- Add subtle border glow
+                    New("UIStroke", {
+                        Color = "AccentColor", -- Use your accent color
+                        Thickness = 1,
+                        Transparency = 0.3,
+                        Parent = IconContainer,
+                    })
+                    
+                    -- Rounded corners
+                    New("UICorner", {
+                        CornerRadius = UDim.new(0, 8),
+                        Parent = IconContainer,
+                    })
+                    
+                    -- Add subtle shadow effect
+                    local ShadowFrame = New("Frame", {
+                        BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+                        BackgroundTransparency = 0.8,
+                        Position = UDim2.fromOffset(2, 2),
+                        Size = UDim2.fromOffset(32, 32),
+                        ZIndex = IconContainer.ZIndex and (IconContainer.ZIndex - 1) or 0,
+                        Parent = IconTextContainer,
+                    })
+                    
+                    New("UICorner", {
+                        CornerRadius = UDim.new(0, 8),
+                        Parent = ShadowFrame,
+                    })
                     
                     -- Create the icon inside the container
-                    New("ImageLabel", {
-                        BackgroundTransparency = 1,
+                    local IconImage = New("ImageLabel", {
                         Image = BoxIcon.Url,
                         ImageColor3 = "AccentColor",
                         ImageRectOffset = BoxIcon.ImageRectOffset,
                         ImageRectSize = BoxIcon.ImageRectSize,
-                        Position = UDim2.fromOffset(2, 2),
-                        Size = UDim2.fromOffset(14, 14),
+                        Position = UDim2.fromScale(0.5, 0.5),
+                        Size = UDim2.fromOffset(20, 20),
+                        AnchorPoint = Vector2.new(0.5, 0.5), -- Center the icon
+                        BackgroundTransparency = 1,
                         Parent = IconContainer,
+                    })
+                    
+                    -- Add text next to the icon
+                    local IconText = New("TextLabel", {
+                        Text = Info.Name or "Feature", -- Use the feature name or default
+                        Font = Enum.Font.GothamMedium,
+                        TextColor3 = "TextColor", -- Use your text color
+                        TextSize = 14,
+                        TextXAlignment = Enum.TextXAlignment.Left,
+                        BackgroundTransparency = 1,
+                        Position = UDim2.fromOffset(40, 0), -- Position next to icon
+                        Size = UDim2.fromOffset(150, 40),
+                        Parent = IconTextContainer,
+                    })
+                    
+                    -- Add subtle text glow effect
+                    New("UIStroke", {
+                        Color = "AccentColor",
+                        Thickness = 0.5,
+                        Transparency = 0.7,
+                        Parent = IconText,
                     })
                 end
 
