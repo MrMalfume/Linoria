@@ -6925,11 +6925,11 @@ function Library:CreateWindow(WindowInfo)
                     local IconContainer = New("Frame", {
                         BackgroundColor3 = "OutlineColor",
                         Position = UDim2.fromOffset(6, 6),
-                        Size = UDim2.fromOffset(16, 16),
+                        Size = UDim2.fromOffset(20, 20),
                         Parent = GroupboxHolder,
                     })
                     New("UICorner", {
-                        CornerRadius = UDim.new(0, 3),
+                        CornerRadius = UDim.new(0, 4),
                         Parent = IconContainer,
                     })
                     
@@ -6939,15 +6939,15 @@ function Library:CreateWindow(WindowInfo)
                         ImageColor3 = "AccentColor",
                         ImageRectOffset = BoxIcon.ImageRectOffset,
                         ImageRectSize = BoxIcon.ImageRectSize,
-                        Position = UDim2.fromOffset(2, 2),
-                        Size = UDim2.fromOffset(12, 12),
+                        Position = UDim2.fromOffset(3, 3),
+                        Size = UDim2.fromOffset(14, 14),
                         Parent = IconContainer,
                     })
                 end
 
                 GroupboxLabel = New("TextLabel", {
                     BackgroundTransparency = 1,
-                    Position = UDim2.fromOffset(BoxIcon and 28 or 0, 0),
+                    Position = UDim2.fromOffset(BoxIcon and 32 or 0, 0),
                     Size = UDim2.new(1, 0, 0, 34),
                     Text = Info.Name,
                     TextSize = 15,
