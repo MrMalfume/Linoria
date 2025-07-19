@@ -257,8 +257,6 @@ local Templates = {
         Font = Enum.Font.Code,
         ToggleKeybind = Enum.KeyCode.RightControl,
         MobileButtonsSide = "Left",
-        Loader = false,
-        LoaderDuration = 4.5,
     },
     Toggle = {
         Text = "Toggle",
@@ -6237,140 +6235,8 @@ function Library:Notify(...)
     return Data
 end
 
-function Library:CreateLoader(WindowInfo, Duration)
-    -- Create loader ScreenGui
-    local LoaderGui = New("ScreenGui", {
-        Name = "ObsidianLoader",
-        Parent = gethui(),
-        Enabled = true,
-        ResetOnSpawn = false,
-        IgnoreGuiInset = true,
-        ZIndexBehavior = Enum.ZIndexBehavior.Global,
-    })
-    
-    -- Main loader frame (fullscreen)
-    local LoaderFrame = New("Frame", {
-        Name = "Loader",
-        Parent = LoaderGui,
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        BackgroundColor3 = Color3.fromRGB(0, 0, 0),
-        BackgroundTransparency = 1,
-        BorderSizePixel = 0,
-        Position = UDim2.new(0.5, 0, 0.5, 0),
-        Size = UDim2.new(1, 0, 1, 0),
-    })
-    
-    -- Icon
-    local Icon = New("ImageLabel", {
-        Name = "Icon",
-        Parent = LoaderFrame,
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        BackgroundTransparency = 1,
-        BorderSizePixel = 0,
-        Position = UDim2.new(0.5, 0, 0.5, 0),
-        Size = UDim2.new(0, 750, 0, 750),
-        ZIndex = 100,
-        Image = WindowInfo.Icon and (tonumber(WindowInfo.Icon) and `rbxassetid://{WindowInfo.Icon}` or WindowInfo.Icon) or "",
-        ImageTransparency = 1,
-    })
-    
-    -- Vignette effect
-    local Vignette = New("ImageLabel", {
-        Name = "Vignette",
-        Parent = LoaderFrame,
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        BackgroundTransparency = 1,
-        BorderSizePixel = 0,
-        Position = UDim2.fromScale(0.5, 0.5),
-        Size = UDim2.new(1, 0, 1, 0),
-        Image = "rbxassetid://18720640102",
-        ImageColor3 = "AccentColor",
-        ImageTransparency = 1,
-    })
-    
-    local Event = Instance.new('BindableEvent')
-    
-    local function animateLoader()
-        -- Phase 1: Background fade in
-        TweenService:Create(LoaderFrame, 
-            TweenInfo.new(0.55, Enum.EasingStyle.Quint), 
-            { BackgroundTransparency = 0.5 }
-        ):Play()
-        
-        task.delay(0.5, function()
-            -- Phase 2: Icon appear and scale down
-            TweenService:Create(Icon,
-                TweenInfo.new(0.75, Enum.EasingStyle.Quint),
-                {
-                    ImageTransparency = 0.01,
-                    Size = UDim2.new(0, 200, 0, 200)
-                }
-            ):Play()
-            
-            task.delay(0.25, function()
-                -- Phase 3: Vignette fade in
-                TweenService:Create(Vignette,
-                    TweenInfo.new(5),
-                    { ImageTransparency = 0.2 }
-                ):Play()
-                
-                task.wait(Duration or 4.5)
-                
-                -- Phase 4: Exit animations
-                TweenService:Create(Vignette,
-                    TweenInfo.new(3, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut),
-                    { Size = UDim2.new(2, 0, 2, 0) }
-                ):Play()
-                
-                TweenService:Create(Icon,
-                    TweenInfo.new(0.75, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut),
-                    { ImageTransparency = 1 }
-                ):Play()
-                
-                TweenService:Create(LoaderFrame,
-                    TweenInfo.new(1.5, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut),
-                    { BackgroundTransparency = 1 }
-                ):Play()
-                
-                task.delay(0.1, function()
-                    TweenService:Create(Vignette,
-                        TweenInfo.new(1, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut),
-                        { ImageTransparency = 1 }
-                    ):Play()
-                    
-                    task.wait(0.2)
-                    
-                    task.delay(3, function()
-                        LoaderGui:Destroy()
-                    end)
-                end)
-                
-                task.delay(0.6, function()
-                    Event:Fire()
-                end)
-            end)
-        end)
-    end
-    
-    return {
-        Frame = LoaderFrame,
-        Animate = animateLoader,
-        yield = function()
-            return Event.Event:Wait()
-        end
-    }
-end
-
 function Library:CreateWindow(WindowInfo)
     WindowInfo = Library:Validate(WindowInfo, Templates.Window)
-    
-    -- Show loader before creating UI if enabled
-    if WindowInfo.Loader then
-        local LoaderData = Library:CreateLoader(WindowInfo, WindowInfo.LoaderDuration)
-        LoaderData.Animate()
-        LoaderData.yield() -- Wait for loader to complete
-    end
-    
     local ViewportSize: Vector2 = workspace.CurrentCamera.ViewportSize
     if RunService:IsStudio() and ViewportSize.X <= 5 and ViewportSize.Y <= 5 then
         repeat
