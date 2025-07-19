@@ -6657,15 +6657,27 @@ function Library:CreateWindow(WindowInfo)
             })
 
             if Icon then
+                -- Create icon background box for tab
+                local TabIconBackground = New("Frame", {
+                    BackgroundColor3 = "MainColor",
+                    Position = UDim2.fromOffset(6, 6),
+                    Size = UDim2.fromOffset(18, 18),
+                    Parent = TabButton,
+                })
+                New("UICorner", {
+                    CornerRadius = UDim.new(0, 3),
+                    Parent = TabIconBackground,
+                })
+                
                 TabIcon = New("ImageLabel", {
                     Image = Icon.Url,
                     ImageColor3 = "AccentColor",
                     ImageRectOffset = Icon.ImageRectOffset,
                     ImageRectSize = Icon.ImageRectSize,
                     ImageTransparency = 0.5,
-                    Size = UDim2.fromScale(1, 1),
-                    SizeConstraint = Enum.SizeConstraint.RelativeYY,
-                    Parent = TabButton,
+                    Position = UDim2.fromOffset(2, 2),
+                    Size = UDim2.fromOffset(14, 14),
+                    Parent = TabIconBackground,
                 })
             end
 
@@ -7287,15 +7299,27 @@ function Library:CreateWindow(WindowInfo)
             })
 
             if KeyIcon then
+                -- Create icon background box for key tab
+                local TabIconBackground = New("Frame", {
+                    BackgroundColor3 = "MainColor",
+                    Position = UDim2.fromOffset(6, 6),
+                    Size = UDim2.fromOffset(18, 18),
+                    Parent = TabButton,
+                })
+                New("UICorner", {
+                    CornerRadius = UDim.new(0, 3),
+                    Parent = TabIconBackground,
+                })
+                
                 TabIcon = New("ImageLabel", {
                     Image = KeyIcon.Url,
                     ImageColor3 = "AccentColor",
                     ImageRectOffset = KeyIcon.ImageRectOffset,
                     ImageRectSize = KeyIcon.ImageRectSize,
                     ImageTransparency = 0.5,
-                    Size = UDim2.fromScale(1, 1),
-                    SizeConstraint = Enum.SizeConstraint.RelativeYY,
-                    Parent = TabButton,
+                    Position = UDim2.fromOffset(2, 2),
+                    Size = UDim2.fromOffset(14, 14),
+                    Parent = TabIconBackground,
                 })
             end
 
