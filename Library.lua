@@ -2253,7 +2253,7 @@ do
             Size = UDim2.new(0, 0, 1, 0),
             AutomaticSize = Enum.AutomaticSize.X,
             Text = (Info.Title or Info.Name or "Rainbow") .. ":",
-            TextColor3 = Library.Colors.Text,
+            TextColor3 = "FontColor",
             TextSize = 14,
             TextXAlignment = Enum.TextXAlignment.Left,
             Font = Enum.Font.GothamMedium,
@@ -2263,12 +2263,12 @@ do
     
         -- Create rainbow toggle button
         local RainbowToggle = New("TextButton", {
-            BackgroundColor3 = ColorPicker.RainbowEnabled and Library.Colors.Accent or Library.Colors.MainColor,
-            BorderColor3 = Library.Colors.OutlineColor,
+            BackgroundColor3 = ColorPicker.RainbowEnabled and "AccentColor" or "MainColor",
+            BorderColor3 = "OutlineColor",
             BorderSizePixel = 1,
             Size = UDim2.fromOffset(40, 18),
             Text = ColorPicker.RainbowEnabled and "ON" or "OFF",
-            TextColor3 = Library.Colors.Text,
+            TextColor3 = "FontColor",
             TextSize = 12,
             Font = Enum.Font.GothamMedium,
             LayoutOrder = 2,
@@ -2305,7 +2305,7 @@ do
             
             if ColorPicker.RainbowEnabled then
                 -- Enable rainbow mode
-                RainbowToggle.BackgroundColor3 = Library.Colors.Accent
+                RainbowToggle.BackgroundColor3 = Library.Scheme.AccentColor
                 RainbowToggle.Text = "ON"
                 
                 -- Start rainbow color cycling
@@ -2318,7 +2318,7 @@ do
                 end))
             else
                 -- Disable rainbow mode
-                RainbowToggle.BackgroundColor3 = Library.Colors.MainColor
+                RainbowToggle.BackgroundColor3 = Library.Scheme.MainColor
                 RainbowToggle.Text = "OFF"
                 
                 -- Stop rainbow color cycling
