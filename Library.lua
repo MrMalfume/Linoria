@@ -6661,11 +6661,11 @@ function Library:CreateWindow(WindowInfo)
                 local TabIconBackground = New("Frame", {
                     BackgroundColor3 = "MainColor",
                     Position = UDim2.fromOffset(6, 6),
-                    Size = UDim2.fromOffset(18, 18),
+                    Size = UDim2.fromOffset(24, 24),
                     Parent = TabButton,
                 })
                 New("UICorner", {
-                    CornerRadius = UDim.new(0, 3),
+                    CornerRadius = UDim.new(0, 4),
                     Parent = TabIconBackground,
                 })
                 
@@ -6675,8 +6675,8 @@ function Library:CreateWindow(WindowInfo)
                     ImageRectOffset = Icon.ImageRectOffset,
                     ImageRectSize = Icon.ImageRectSize,
                     ImageTransparency = 0.5,
-                    Position = UDim2.fromOffset(2, 2),
-                    Size = UDim2.fromOffset(14, 14),
+                    Position = UDim2.fromOffset(3, 3),
+                    Size = UDim2.fromOffset(18, 18),
                     Parent = TabIconBackground,
                 })
             end
@@ -6937,11 +6937,11 @@ function Library:CreateWindow(WindowInfo)
                     local IconBackground = New("Frame", {
                         BackgroundColor3 = "MainColor",
                         Position = UDim2.fromOffset(6, 6),
-                        Size = UDim2.fromOffset(28, 22),
+                        Size = UDim2.fromOffset(36, 28),
                         Parent = GroupboxHolder,
                     })
                     New("UICorner", {
-                        CornerRadius = UDim.new(0, 4),
+                        CornerRadius = UDim.new(0, 5),
                         Parent = IconBackground,
                     })
                     
@@ -6951,15 +6951,15 @@ function Library:CreateWindow(WindowInfo)
                         ImageColor3 = "AccentColor",
                         ImageRectOffset = BoxIcon.ImageRectOffset,
                         ImageRectSize = BoxIcon.ImageRectSize,
-                        Position = UDim2.fromOffset(3, 0),
-                        Size = UDim2.fromOffset(22, 22),
+                        Position = UDim2.fromOffset(6, 3),
+                        Size = UDim2.fromOffset(24, 22),
                         Parent = IconBackground,
                     })
                 end
 
                 GroupboxLabel = New("TextLabel", {
                     BackgroundTransparency = 1,
-                    Position = UDim2.fromOffset(BoxIcon and 34 or 0, 0),
+                    Position = UDim2.fromOffset(BoxIcon and 44 or 0, 0),
                     Size = UDim2.new(1, 0, 0, 34),
                     Text = Info.Name,
                     TextSize = 15,
@@ -7303,11 +7303,11 @@ function Library:CreateWindow(WindowInfo)
                 local TabIconBackground = New("Frame", {
                     BackgroundColor3 = "MainColor",
                     Position = UDim2.fromOffset(6, 6),
-                    Size = UDim2.fromOffset(18, 18),
+                    Size = UDim2.fromOffset(24, 24),
                     Parent = TabButton,
                 })
                 New("UICorner", {
-                    CornerRadius = UDim.new(0, 3),
+                    CornerRadius = UDim.new(0, 4),
                     Parent = TabIconBackground,
                 })
                 
@@ -7317,8 +7317,8 @@ function Library:CreateWindow(WindowInfo)
                     ImageRectOffset = KeyIcon.ImageRectOffset,
                     ImageRectSize = KeyIcon.ImageRectSize,
                     ImageTransparency = 0.5,
-                    Position = UDim2.fromOffset(2, 2),
-                    Size = UDim2.fromOffset(14, 14),
+                    Position = UDim2.fromOffset(3, 3),
+                    Size = UDim2.fromOffset(18, 18),
                     Parent = TabIconBackground,
                 })
             end
