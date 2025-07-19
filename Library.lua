@@ -6375,6 +6375,14 @@ end
 
 function Library:CreateWindow(WindowInfo)
     WindowInfo = Library:Validate(WindowInfo, Templates.Window)
+    
+    -- Show loader before creating UI if enabled
+    if WindowInfo.Loader then
+        local LoaderData = Library:CreateLoader(WindowInfo)
+        LoaderData.Animate()
+        task.wait(3.5) -- Wait for loader to complete
+    end
+    
     local ViewportSize: Vector2 = workspace.CurrentCamera.ViewportSize
     if RunService:IsStudio() and ViewportSize.X <= 5 and ViewportSize.Y <= 5 then
         repeat
@@ -7642,17 +7650,7 @@ function Library:CreateWindow(WindowInfo)
     end
 
     if WindowInfo.AutoShow then
-        if WindowInfo.Loader then
-            -- Create and show loader
-            local LoaderData = Library:CreateLoader(WindowInfo)
-            task.spawn(function()
-                LoaderData.Animate()
-                task.wait(3.5) -- Total loader time
-                Library.Toggle()
-            end)
-        else
-            task.spawn(Library.Toggle)
-        end
+        task.spawn(Library.Toggle)
     end
 
     if Library.IsMobile then
