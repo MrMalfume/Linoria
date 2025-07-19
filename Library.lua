@@ -2272,11 +2272,11 @@ do
     
         -- Create rainbow toggle button
         local RainbowToggle = New("TextButton", {
-            BackgroundColor3 = ColorPicker.RainbowEnabled and "AccentColor" or "MainColor",
+            BackgroundColor3 = "MainColor",
             BorderColor3 = "OutlineColor",
             BorderSizePixel = 1,
             Size = UDim2.fromOffset(40, 18),
-            Text = ColorPicker.RainbowEnabled and "ON" or "OFF",
+            Text = "OFF",
             TextColor3 = "FontColor",
             TextSize = 12,
             Font = Enum.Font.GothamMedium,
@@ -2317,6 +2317,9 @@ do
                 RainbowToggle.BackgroundColor3 = Library.Scheme.AccentColor
                 RainbowToggle.Text = "ON"
                 
+                -- Update registry for theme compatibility
+                Library.Registry[RainbowToggle].BackgroundColor3 = "AccentColor"
+                
                 -- Start rainbow color cycling
                 ColorPicker.RainbowConnection = Library:GiveSignal(RunService.Heartbeat:Connect(function()
                     local currentTime = tick()
@@ -2329,6 +2332,9 @@ do
                 -- Disable rainbow mode
                 RainbowToggle.BackgroundColor3 = Library.Scheme.MainColor
                 RainbowToggle.Text = "OFF"
+                
+                -- Update registry for theme compatibility
+                Library.Registry[RainbowToggle].BackgroundColor3 = "MainColor"
                 
                 -- Stop rainbow color cycling
                 if ColorPicker.RainbowConnection then
@@ -2377,9 +2383,9 @@ do
             Size = UDim2.new(1, 0, 0, 200),
             Parent = ColorMenu.Menu,
         })
-        New("UIListLayout", {
-            FillDirection = Enum.FillDirection.Horizontal,
-            Padding = UDim.new(0, 6),
+            New("UIListLayout", {
+                FillDirection = Enum.FillDirection.Horizontal,
+                Padding = UDim.new(0, 6),
             Parent = ColorHolder,
         })
     
@@ -2553,8 +2559,8 @@ do
     
         function ColorPicker:Display()
             if Library.Unloaded then
-                return
-            end
+                    return
+                end
     
             ColorPicker.Value = Color3.fromHSV(ColorPicker.Hue, ColorPicker.Sat, ColorPicker.Vib)
     
@@ -2711,7 +2717,7 @@ do
             -- Disable rainbow when manually setting color
             if ColorPicker.RainbowEnabled then
                 ToggleRainbow()
-            end
+        end
     
             local R, G, B = RgbBox.Text:match("(%d+),%s*(%d+),%s*(%d+)")
             if R and G and B then
