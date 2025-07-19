@@ -258,6 +258,7 @@ local Templates = {
         ToggleKeybind = Enum.KeyCode.RightControl,
         MobileButtonsSide = "Left",
         Loader = false,
+        LoaderDuration = 4.5,
     },
     Toggle = {
         Text = "Toggle",
@@ -6236,140 +6237,127 @@ function Library:Notify(...)
     return Data
 end
 
-function Library:CreateLoader(WindowInfo)
+function Library:CreateLoader(WindowInfo, Duration)
+    -- Create loader ScreenGui
+    local LoaderGui = New("ScreenGui", {
+        Name = "ObsidianLoader",
+        Parent = gethui(),
+        Enabled = true,
+        ResetOnSpawn = false,
+        IgnoreGuiInset = true,
+        ZIndexBehavior = Enum.ZIndexBehavior.Global,
+    })
+    
+    -- Main loader frame (fullscreen)
     local LoaderFrame = New("Frame", {
-        BackgroundColor3 = "BackgroundColor",
         Name = "Loader",
-        Position = WindowInfo.Center and UDim2.new(0.5, -200, 0.5, -150) or WindowInfo.Position,
-        Size = UDim2.fromOffset(400, 300),
-        Parent = ScreenGui,
+        Parent = LoaderGui,
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        Position = UDim2.new(0.5, 0, 0.5, 0),
+        Size = UDim2.new(1, 0, 1, 0),
     })
-    New("UICorner", {
-        CornerRadius = UDim.new(0, WindowInfo.CornerRadius),
+    
+    -- Icon
+    local Icon = New("ImageLabel", {
+        Name = "Icon",
         Parent = LoaderFrame,
-    })
-    Library:MakeOutline(LoaderFrame, WindowInfo.CornerRadius, 0)
-    
-    -- Main container
-    local Container = New("Frame", {
+        AnchorPoint = Vector2.new(0.5, 0.5),
         BackgroundTransparency = 1,
-        Size = UDim2.fromScale(1, 1),
+        BorderSizePixel = 0,
+        Position = UDim2.new(0.5, 0, 0.5, 0),
+        Size = UDim2.new(0, 750, 0, 750),
+        ZIndex = 100,
+        Image = WindowInfo.Icon and (tonumber(WindowInfo.Icon) and `rbxassetid://{WindowInfo.Icon}` or WindowInfo.Icon) or "",
+        ImageTransparency = 1,
+    })
+    
+    -- Vignette effect
+    local Vignette = New("ImageLabel", {
+        Name = "Vignette",
         Parent = LoaderFrame,
-    })
-    New("UIListLayout", {
-        FillDirection = Enum.FillDirection.Vertical,
-        HorizontalAlignment = Enum.HorizontalAlignment.Center,
-        VerticalAlignment = Enum.VerticalAlignment.Center,
-        Padding = UDim.new(0, 20),
-        Parent = Container,
-    })
-    
-    -- Icon/Logo
-    if WindowInfo.Icon then
-        New("ImageLabel", {
-            Image = if tonumber(WindowInfo.Icon) then `rbxassetid://{WindowInfo.Icon}` else WindowInfo.Icon,
-            Size = UDim2.fromOffset(80, 80),
-            Parent = Container,
-        })
-    end
-    
-    -- Title
-    New("TextLabel", {
+        AnchorPoint = Vector2.new(0.5, 0.5),
         BackgroundTransparency = 1,
-        Size = UDim2.new(1, -40, 0, 30),
-        Text = WindowInfo.Title,
-        TextSize = 24,
-        TextColor3 = "FontColor",
-        FontFace = WindowInfo.Font,
-        Parent = Container,
+        BorderSizePixel = 0,
+        Position = UDim2.fromScale(0.5, 0.5),
+        Size = UDim2.new(1, 0, 1, 0),
+        Image = "rbxassetid://18720640102",
+        ImageColor3 = "AccentColor",
+        ImageTransparency = 1,
     })
     
-    -- Loading text
-    local LoadingText = New("TextLabel", {
-        BackgroundTransparency = 1,
-        Size = UDim2.new(1, -40, 0, 20),
-        Text = "Loading...",
-        TextSize = 16,
-        TextColor3 = "FontColor",
-        FontFace = WindowInfo.Font,
-        TextTransparency = 0.5,
-        Parent = Container,
-    })
-    
-    -- Progress bar background
-    local ProgressBG = New("Frame", {
-        BackgroundColor3 = "MainColor",
-        Size = UDim2.new(0, 200, 0, 4),
-        Parent = Container,
-    })
-    New("UICorner", {
-        CornerRadius = UDim.new(0, 2),
-        Parent = ProgressBG,
-    })
-    
-    -- Progress bar fill
-    local ProgressFill = New("Frame", {
-        BackgroundColor3 = "AccentColor",
-        Size = UDim2.new(0, 0, 1, 0),
-        Parent = ProgressBG,
-    })
-    New("UICorner", {
-        CornerRadius = UDim.new(0, 2),
-        Parent = ProgressFill,
-    })
-    
-    -- Animate loading
-    local LoadingSteps = {
-        "Initializing...",
-        "Loading components...",
-        "Setting up interface...",
-        "Finalizing...",
-        "Complete!"
-    }
+    local Event = Instance.new('BindableEvent')
     
     local function animateLoader()
-        for i, step in ipairs(LoadingSteps) do
-            LoadingText.Text = step
-            
-            -- Animate progress bar
-            local targetWidth = (i / #LoadingSteps) * 200
-            TweenService:Create(ProgressFill, 
-                TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-                {Size = UDim2.new(0, targetWidth, 1, 0)}
+        -- Phase 1: Background fade in
+        TweenService:Create(LoaderFrame, 
+            TweenInfo.new(0.55, Enum.EasingStyle.Quint), 
+            { BackgroundTransparency = 0.5 }
+        ):Play()
+        
+        task.delay(0.5, function()
+            -- Phase 2: Icon appear and scale down
+            TweenService:Create(Icon,
+                TweenInfo.new(0.75, Enum.EasingStyle.Quint),
+                {
+                    ImageTransparency = 0.01,
+                    Size = UDim2.new(0, 200, 0, 200)
+                }
             ):Play()
             
-            task.wait(0.6)
-        end
-        
-        -- Fade out loader
-        local fadeOutTween = TweenService:Create(LoaderFrame,
-            TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-            {BackgroundTransparency = 1}
-        )
-        
-        local contentFadeTween = TweenService:Create(Container,
-            TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-            {BackgroundTransparency = 1}
-        )
-        
-        fadeOutTween:Play()
-        for _, child in ipairs(Container:GetDescendants()) do
-            if child:IsA("GuiObject") then
-                TweenService:Create(child,
-                    TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-                    {BackgroundTransparency = 1, TextTransparency = 1, ImageTransparency = 1}
+            task.delay(0.25, function()
+                -- Phase 3: Vignette fade in
+                TweenService:Create(Vignette,
+                    TweenInfo.new(5),
+                    { ImageTransparency = 0.2 }
                 ):Play()
-            end
-        end
-        
-        fadeOutTween.Completed:Connect(function()
-            LoaderFrame:Destroy()
+                
+                task.wait(Duration or 4.5)
+                
+                -- Phase 4: Exit animations
+                TweenService:Create(Vignette,
+                    TweenInfo.new(3, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut),
+                    { Size = UDim2.new(2, 0, 2, 0) }
+                ):Play()
+                
+                TweenService:Create(Icon,
+                    TweenInfo.new(0.75, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut),
+                    { ImageTransparency = 1 }
+                ):Play()
+                
+                TweenService:Create(LoaderFrame,
+                    TweenInfo.new(1.5, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut),
+                    { BackgroundTransparency = 1 }
+                ):Play()
+                
+                task.delay(0.1, function()
+                    TweenService:Create(Vignette,
+                        TweenInfo.new(1, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut),
+                        { ImageTransparency = 1 }
+                    ):Play()
+                    
+                    task.wait(0.2)
+                    
+                    task.delay(3, function()
+                        LoaderGui:Destroy()
+                    end)
+                end)
+                
+                task.delay(0.6, function()
+                    Event:Fire()
+                end)
+            end)
         end)
     end
     
     return {
         Frame = LoaderFrame,
-        Animate = animateLoader
+        Animate = animateLoader,
+        yield = function()
+            return Event.Event:Wait()
+        end
     }
 end
 
@@ -6378,9 +6366,9 @@ function Library:CreateWindow(WindowInfo)
     
     -- Show loader before creating UI if enabled
     if WindowInfo.Loader then
-        local LoaderData = Library:CreateLoader(WindowInfo)
+        local LoaderData = Library:CreateLoader(WindowInfo, WindowInfo.LoaderDuration)
         LoaderData.Animate()
-        task.wait(3.5) -- Wait for loader to complete
+        LoaderData.yield() -- Wait for loader to complete
     end
     
     local ViewportSize: Vector2 = workspace.CurrentCamera.ViewportSize
