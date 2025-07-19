@@ -6921,20 +6921,33 @@ function Library:CreateWindow(WindowInfo)
 
                 local BoxIcon = Library:GetIcon(Info.IconName)
                 if BoxIcon then
+                    -- Create icon background box
+                    local IconBackground = New("Frame", {
+                        BackgroundColor3 = "MainColor",
+                        Position = UDim2.fromOffset(6, 6),
+                        Size = UDim2.fromOffset(28, 22),
+                        Parent = GroupboxHolder,
+                    })
+                    New("UICorner", {
+                        CornerRadius = UDim.new(0, 4),
+                        Parent = IconBackground,
+                    })
+                    
+                    -- Create the icon inside the background box
                     New("ImageLabel", {
                         Image = BoxIcon.Url,
                         ImageColor3 = "AccentColor",
                         ImageRectOffset = BoxIcon.ImageRectOffset,
                         ImageRectSize = BoxIcon.ImageRectSize,
-                        Position = UDim2.fromOffset(6, 6),
+                        Position = UDim2.fromOffset(3, 0),
                         Size = UDim2.fromOffset(22, 22),
-                        Parent = GroupboxHolder,
+                        Parent = IconBackground,
                     })
                 end
 
                 GroupboxLabel = New("TextLabel", {
                     BackgroundTransparency = 1,
-                    Position = UDim2.fromOffset(BoxIcon and 24 or 0, 0),
+                    Position = UDim2.fromOffset(BoxIcon and 34 or 0, 0),
                     Size = UDim2.new(1, 0, 0, 34),
                     Text = Info.Name,
                     TextSize = 15,
