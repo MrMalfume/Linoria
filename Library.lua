@@ -966,6 +966,20 @@ local FetchIcons, Icons = pcall(function()
     )()
 end)
 function Library:GetIcon(IconName: string)
+    if not IconName or IconName == "" then
+        return
+    end
+    
+    -- Check if it's a Roblox asset ID (numeric string)
+    if tonumber(IconName) then
+        return {
+            Url = "rbxassetid://" .. IconName,
+            ImageRectOffset = Vector2.new(0, 0),
+            ImageRectSize = Vector2.new(0, 0)
+        }
+    end
+    
+    -- Try to get icon from Lucide library
     if not FetchIcons then
         return
     end
