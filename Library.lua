@@ -6887,11 +6887,11 @@ function Library:CreateWindow(WindowInfo)
                 Parent = Info.Side == 1 and TabLeft or TabRight,
             })
             New("UIListLayout", {
-                Padding = UDim.new(0, 10), -- Slightly bigger padding
+                Padding = UDim.new(0, 6),
                 Parent = BoxHolder,
             })
 
-            local Background = Library:MakeOutline(BoxHolder, WindowInfo.CornerRadius + 2) -- Slightly bigger corner radius
+            local Background = Library:MakeOutline(BoxHolder, WindowInfo.CornerRadius)
             Background.Size = UDim2.fromScale(1, 0)
             Library:UpdateDPI(Background, {
                 Size = false,
@@ -6911,71 +6911,74 @@ function Library:CreateWindow(WindowInfo)
                     Parent = Background,
                 })
                 New("UICorner", {
-                    CornerRadius = UDim.new(0, WindowInfo.CornerRadius + 1), -- Slightly bigger corner radius
+                    CornerRadius = UDim.new(0, WindowInfo.CornerRadius - 1),
                     Parent = GroupboxHolder,
                 })
                 Library:MakeLine(GroupboxHolder, {
-                    Position = UDim2.fromOffset(0, 42), -- Move line down to match bigger header
+                    Position = UDim2.fromOffset(0, 34),
                     Size = UDim2.new(1, 0, 0, 1),
                 })
 
                 local BoxIcon = Library:GetIcon(Info.IconName)
+                local IconContainer
                 if BoxIcon then
                     -- Create icon container box
-                    local IconContainer = New("Frame", {
-                        BackgroundColor3 = "OutlineColor",
-                        Position = UDim2.fromOffset(8, 8), -- Slightly more padding
-                        Size = UDim2.fromOffset(32, 32), -- Bigger icon box
+                    IconContainer = New("Frame", {
+                        BackgroundColor3 = "MainColor",
+                        Position = UDim2.fromOffset(8, 8),
+                        Size = UDim2.fromOffset(18, 18),
                         Parent = GroupboxHolder,
                     })
                     New("UICorner", {
-                        CornerRadius = UDim.new(0, 6), -- Slightly rounder
+                        CornerRadius = UDim.new(0, 3),
                         Parent = IconContainer,
                     })
+                    Library:MakeOutline(IconContainer, 3)
                     
                     -- Create the icon inside the container
                     New("ImageLabel", {
+                        BackgroundTransparency = 1,
                         Image = BoxIcon.Url,
                         ImageColor3 = "AccentColor",
                         ImageRectOffset = BoxIcon.ImageRectOffset,
                         ImageRectSize = BoxIcon.ImageRectSize,
-                        Position = UDim2.fromOffset(5, 5), -- Centered in bigger box
-                        Size = UDim2.fromOffset(20, 20), -- Bigger icon
+                        Position = UDim2.fromOffset(2, 2),
+                        Size = UDim2.fromOffset(14, 14),
                         Parent = IconContainer,
                     })
                 end
 
                 GroupboxLabel = New("TextLabel", {
                     BackgroundTransparency = 1,
-                    Position = UDim2.fromOffset(BoxIcon and 42 or 0, 0), -- Move label right to match bigger icon
-                    Size = UDim2.new(1, 0, 0, 42), -- Bigger header
+                    Position = UDim2.fromOffset(BoxIcon and 32 or 0, 0),
+                    Size = UDim2.new(1, BoxIcon and -32 or 0, 0, 34),
                     Text = Info.Name,
-                    TextSize = 18, -- Slightly bigger text
+                    TextSize = 15,
                     TextXAlignment = Enum.TextXAlignment.Left,
                     Parent = GroupboxHolder,
                 })
                 New("UIPadding", {
-                    PaddingLeft = UDim.new(0, 16), -- More padding
-                    PaddingRight = UDim.new(0, 16),
+                    PaddingLeft = UDim.new(0, 12),
+                    PaddingRight = UDim.new(0, 12),
                     Parent = GroupboxLabel,
                 })
 
                 GroupboxContainer = New("Frame", {
                     BackgroundTransparency = 1,
-                    Position = UDim2.fromOffset(0, 44), -- Move down to match bigger header
-                    Size = UDim2.new(1, 0, 1, -44),
+                    Position = UDim2.fromOffset(0, 35),
+                    Size = UDim2.new(1, 0, 1, -35),
                     Parent = GroupboxHolder,
                 })
 
                 GroupboxList = New("UIListLayout", {
-                    Padding = UDim.new(0, 12), -- Slightly bigger padding between elements
+                    Padding = UDim.new(0, 8),
                     Parent = GroupboxContainer,
                 })
                 New("UIPadding", {
-                    PaddingBottom = UDim.new(0, 10),
-                    PaddingLeft = UDim.new(0, 10),
-                    PaddingRight = UDim.new(0, 10),
-                    PaddingTop = UDim.new(0, 10),
+                    PaddingBottom = UDim.new(0, 7),
+                    PaddingLeft = UDim.new(0, 7),
+                    PaddingRight = UDim.new(0, 7),
+                    PaddingTop = UDim.new(0, 7),
                     Parent = GroupboxContainer,
                 })
             end
