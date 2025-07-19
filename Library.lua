@@ -6968,7 +6968,7 @@ function Library:CreateWindow(WindowInfo)
                         BackgroundTransparency = 0.8,
                         Position = UDim2.fromOffset(2, 2),
                         Size = UDim2.fromOffset(32, 32),
-                        ZIndex = IconContainer.ZIndex and (IconContainer.ZIndex - 1) or 0,
+                        ZIndex = IconContainer.ZIndex - 1,
                         Parent = IconTextContainer,
                     })
                     
