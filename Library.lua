@@ -6269,10 +6269,9 @@ function Library:CreateLoader(IconId, Duration)
         Size = UDim2.new(0, 750, 0, 750),
         ZIndex = 100,
         ImageTransparency = 1,
-        ImageColor3 = "AccentColor",  -- Use theme system
     })
 
-    -- Set the icon
+    -- Set the icon and color
     if IconId then
         local Icon = Library:GetIcon(tostring(IconId))
         if Icon then
@@ -6281,6 +6280,13 @@ function Library:CreateLoader(IconId, Duration)
             IconFrame.ImageRectSize = Icon.ImageRectSize
         end
     end
+    
+    -- Apply accent color using theme registry
+    if not Library.Registry[IconFrame] then
+        Library.Registry[IconFrame] = {}
+    end
+    Library.Registry[IconFrame].ImageColor3 = "AccentColor"
+    IconFrame.ImageColor3 = Library.Scheme.AccentColor
 
     local Vignette = New("ImageLabel", {
         Name = "Vignette",
@@ -6289,11 +6295,17 @@ function Library:CreateLoader(IconId, Duration)
         BorderSizePixel = 0,
         Size = UDim2.new(1, 0, 1, 0),
         Image = "rbxassetid://18720640102",
-        ImageColor3 = "AccentColor",  -- Use theme system
         ImageTransparency = 1,
         AnchorPoint = Vector2.new(0.5, 0.5),
         Position = UDim2.fromScale(0.5, 0.5),
     })
+    
+    -- Apply accent color using theme registry
+    if not Library.Registry[Vignette] then
+        Library.Registry[Vignette] = {}
+    end
+    Library.Registry[Vignette].ImageColor3 = "AccentColor"
+    Vignette.ImageColor3 = Library.Scheme.AccentColor
 
     -- Animate the loader
     TweenService:Create(LoaderFrame, TweenInfo.new(0.55, Enum.EasingStyle.Quint), {
