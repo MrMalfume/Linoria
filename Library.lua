@@ -257,6 +257,9 @@ local Templates = {
         Font = Enum.Font.Code,
         ToggleKeybind = Enum.KeyCode.RightControl,
         MobileButtonsSide = "Left",
+        Loader = false,
+        LoaderIcon = nil,
+        LoaderDuration = 4.5,
     },
     Toggle = {
         Text = "Toggle",
@@ -6235,6 +6238,119 @@ function Library:Notify(...)
     return Data
 end
 
+function Library:CreateLoader(IconId, Duration)
+    local LoaderGui = New("ScreenGui", {
+        Name = "ObsidianLoader",
+        Parent = CoreGui,
+        Enabled = true,
+        ResetOnSpawn = false,
+        IgnoreGuiInset = true,
+        ZIndexBehavior = Enum.ZIndexBehavior.Global,
+    })
+
+    local LoaderFrame = New("Frame", {
+        Name = "Loader",
+        Parent = LoaderGui,
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        BackgroundColor3 = Color3.new(0, 0, 0),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        Position = UDim2.new(0.5, 0, 0.5, 0),
+        Size = UDim2.new(1, 0, 1, 0),
+    })
+
+    local IconFrame = New("ImageLabel", {
+        Name = "Icon",
+        Parent = LoaderFrame,
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        Position = UDim2.new(0.5, 0, 0.5, 0),
+        Size = UDim2.new(0, 750, 0, 750),
+        ZIndex = 100,
+        ImageTransparency = 1,
+    })
+
+    -- Set the icon
+    if IconId then
+        local Icon = Library:GetIcon(tostring(IconId))
+        if Icon then
+            IconFrame.Image = Icon.Url
+            IconFrame.ImageRectOffset = Icon.ImageRectOffset
+            IconFrame.ImageRectSize = Icon.ImageRectSize
+        end
+    end
+
+    local Vignette = New("ImageLabel", {
+        Name = "Vignette",
+        Parent = LoaderFrame,
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        Size = UDim2.new(1, 0, 1, 0),
+        Image = "rbxassetid://18720640102",
+        ImageColor3 = Library.Scheme.AccentColor,
+        ImageTransparency = 1,
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Position = UDim2.fromScale(0.5, 0.5),
+    })
+
+    -- Animate the loader
+    TweenService:Create(LoaderFrame, TweenInfo.new(0.55, Enum.EasingStyle.Quint), {
+        BackgroundTransparency = 0.5
+    }):Play()
+
+    local Event = Instance.new('BindableEvent')
+
+    task.delay(0.5, function()
+        TweenService:Create(IconFrame, TweenInfo.new(0.75, Enum.EasingStyle.Quint), {
+            ImageTransparency = 0.01,
+            Size = UDim2.new(0, 200, 0, 200)
+        }):Play()
+
+        task.delay(0.25, function()
+            TweenService:Create(Vignette, TweenInfo.new(5), {
+                ImageTransparency = 0.2
+            }):Play()
+
+            task.wait(Duration or 4.5)
+
+            TweenService:Create(Vignette, TweenInfo.new(3, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut), {
+                Size = UDim2.new(2, 0, 2, 0)
+            }):Play()
+
+            TweenService:Create(IconFrame, TweenInfo.new(0.75, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut), {
+                ImageTransparency = 1,
+            }):Play()
+
+            TweenService:Create(LoaderFrame, TweenInfo.new(1.5, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut), {
+                BackgroundTransparency = 1
+            }):Play()
+
+            task.delay(0.1, function()
+                TweenService:Create(Vignette, TweenInfo.new(1, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut), {
+                    ImageTransparency = 1
+                }):Play()
+
+                task.wait(0.2)
+
+                task.delay(3, function()
+                    LoaderGui:Destroy()
+                end)
+            end)
+
+            task.delay(0.6, function()
+                Event:Fire()
+            end)
+        end)
+    end)
+
+    return {
+        yield = function()
+            return Event.Event:Wait()
+        end
+    }
+end
+
 function Library:CreateWindow(WindowInfo)
     WindowInfo = Library:Validate(WindowInfo, Templates.Window)
     local ViewportSize: Vector2 = workspace.CurrentCamera.ViewportSize
@@ -7504,7 +7620,16 @@ function Library:CreateWindow(WindowInfo)
     end
 
     if WindowInfo.AutoShow then
-        task.spawn(Library.Toggle)
+        if WindowInfo.Loader then
+            local LoaderIcon = WindowInfo.LoaderIcon or WindowInfo.Icon
+            local LoaderInstance = Library:CreateLoader(LoaderIcon, WindowInfo.LoaderDuration)
+            task.spawn(function()
+                LoaderInstance.yield()
+                Library:Toggle()
+            end)
+        else
+            task.spawn(Library.Toggle)
+        end
     end
 
     if Library.IsMobile then
