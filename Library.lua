@@ -257,6 +257,7 @@ local Templates = {
         Font = Enum.Font.Code,
         ToggleKeybind = Enum.KeyCode.RightControl,
         MobileButtonsSide = "Left",
+        Loader = false,
     },
     Toggle = {
         Text = "Toggle",
@@ -6235,6 +6236,143 @@ function Library:Notify(...)
     return Data
 end
 
+function Library:CreateLoader(WindowInfo)
+    local LoaderFrame = New("Frame", {
+        BackgroundColor3 = "BackgroundColor",
+        Name = "Loader",
+        Position = WindowInfo.Center and UDim2.new(0.5, -200, 0.5, -150) or WindowInfo.Position,
+        Size = UDim2.fromOffset(400, 300),
+        Parent = ScreenGui,
+    })
+    New("UICorner", {
+        CornerRadius = UDim.new(0, WindowInfo.CornerRadius),
+        Parent = LoaderFrame,
+    })
+    Library:MakeOutline(LoaderFrame, WindowInfo.CornerRadius, 0)
+    
+    -- Main container
+    local Container = New("Frame", {
+        BackgroundTransparency = 1,
+        Size = UDim2.fromScale(1, 1),
+        Parent = LoaderFrame,
+    })
+    New("UIListLayout", {
+        FillDirection = Enum.FillDirection.Vertical,
+        HorizontalAlignment = Enum.HorizontalAlignment.Center,
+        VerticalAlignment = Enum.VerticalAlignment.Center,
+        Padding = UDim.new(0, 20),
+        Parent = Container,
+    })
+    
+    -- Icon/Logo
+    if WindowInfo.Icon then
+        New("ImageLabel", {
+            Image = if tonumber(WindowInfo.Icon) then `rbxassetid://{WindowInfo.Icon}` else WindowInfo.Icon,
+            Size = UDim2.fromOffset(80, 80),
+            Parent = Container,
+        })
+    end
+    
+    -- Title
+    New("TextLabel", {
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, -40, 0, 30),
+        Text = WindowInfo.Title,
+        TextSize = 24,
+        TextColor3 = "FontColor",
+        FontFace = WindowInfo.Font,
+        Parent = Container,
+    })
+    
+    -- Loading text
+    local LoadingText = New("TextLabel", {
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, -40, 0, 20),
+        Text = "Loading...",
+        TextSize = 16,
+        TextColor3 = "FontColor",
+        FontFace = WindowInfo.Font,
+        TextTransparency = 0.5,
+        Parent = Container,
+    })
+    
+    -- Progress bar background
+    local ProgressBG = New("Frame", {
+        BackgroundColor3 = "MainColor",
+        Size = UDim2.new(0, 200, 0, 4),
+        Parent = Container,
+    })
+    New("UICorner", {
+        CornerRadius = UDim.new(0, 2),
+        Parent = ProgressBG,
+    })
+    
+    -- Progress bar fill
+    local ProgressFill = New("Frame", {
+        BackgroundColor3 = "AccentColor",
+        Size = UDim2.new(0, 0, 1, 0),
+        Parent = ProgressBG,
+    })
+    New("UICorner", {
+        CornerRadius = UDim.new(0, 2),
+        Parent = ProgressFill,
+    })
+    
+    -- Animate loading
+    local LoadingSteps = {
+        "Initializing...",
+        "Loading components...",
+        "Setting up interface...",
+        "Finalizing...",
+        "Complete!"
+    }
+    
+    local function animateLoader()
+        for i, step in ipairs(LoadingSteps) do
+            LoadingText.Text = step
+            
+            -- Animate progress bar
+            local targetWidth = (i / #LoadingSteps) * 200
+            TweenService:Create(ProgressFill, 
+                TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                {Size = UDim2.new(0, targetWidth, 1, 0)}
+            ):Play()
+            
+            task.wait(0.6)
+        end
+        
+        -- Fade out loader
+        local fadeOutTween = TweenService:Create(LoaderFrame,
+            TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {BackgroundTransparency = 1}
+        )
+        
+        local contentFadeTween = TweenService:Create(Container,
+            TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {BackgroundTransparency = 1}
+        )
+        
+        fadeOutTween:Play()
+        for _, child in ipairs(Container:GetDescendants()) do
+            if child:IsA("GuiObject") then
+                TweenService:Create(child,
+                    TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                    {BackgroundTransparency = 1, TextTransparency = 1, ImageTransparency = 1}
+                ):Play()
+            end
+        end
+        
+        fadeOutTween.Completed:Connect(function()
+            LoaderFrame:Destroy()
+        end)
+    end
+    
+    return {
+        Frame = LoaderFrame,
+        Animate = animateLoader
+    }
+end
+
 function Library:CreateWindow(WindowInfo)
     WindowInfo = Library:Validate(WindowInfo, Templates.Window)
     local ViewportSize: Vector2 = workspace.CurrentCamera.ViewportSize
@@ -7504,7 +7642,17 @@ function Library:CreateWindow(WindowInfo)
     end
 
     if WindowInfo.AutoShow then
-        task.spawn(Library.Toggle)
+        if WindowInfo.Loader then
+            -- Create and show loader
+            local LoaderData = Library:CreateLoader(WindowInfo)
+            task.spawn(function()
+                LoaderData.Animate()
+                task.wait(3.5) -- Total loader time
+                Library.Toggle()
+            end)
+        else
+            task.spawn(Library.Toggle)
+        end
     end
 
     if Library.IsMobile then
