@@ -6921,37 +6921,20 @@ function Library:CreateWindow(WindowInfo)
 
                 local BoxIcon = Library:GetIcon(Info.IconName)
                 if BoxIcon then
-                    local IconSize = 22
-                    local IconPadding = 4
-                    local TotalIconWidth = IconSize + (IconPadding * 2)
-                    
-                    -- Create icon background box that fits the icon
-                    local IconBackground = New("Frame", {
-                        BackgroundColor3 = "MainColor",
-                        Position = UDim2.fromOffset(6, 6),
-                        Size = UDim2.fromOffset(TotalIconWidth, IconSize),
-                        Parent = GroupboxHolder,
-                    })
-                    New("UICorner", {
-                        CornerRadius = UDim.new(0, 4),
-                        Parent = IconBackground,
-                    })
-                    
-                    -- Create the icon inside the background box
                     New("ImageLabel", {
                         Image = BoxIcon.Url,
                         ImageColor3 = "AccentColor",
                         ImageRectOffset = BoxIcon.ImageRectOffset,
                         ImageRectSize = BoxIcon.ImageRectSize,
-                        Position = UDim2.fromOffset(IconPadding, 0),
-                        Size = UDim2.fromOffset(IconSize, IconSize),
-                        Parent = IconBackground,
+                        Position = UDim2.fromOffset(6, 6),
+                        Size = UDim2.fromOffset(22, 22),
+                        Parent = GroupboxHolder,
                     })
                 end
 
                 GroupboxLabel = New("TextLabel", {
                     BackgroundTransparency = 1,
-                    Position = UDim2.fromOffset(BoxIcon and (6 + 30 + 8) or 0, 0),
+                    Position = UDim2.fromOffset(BoxIcon and 24 or 0, 0),
                     Size = UDim2.new(1, 0, 0, 34),
                     Text = Info.Name,
                     TextSize = 15,
