@@ -74,7 +74,7 @@ local Library = {
 
     MinSize = Vector2.new(480, 360),
     DPIScale = 1,
-    CornerRadius = 4,
+    CornerRadius = 8,
 
     IsLightTheme = false,
     Scheme = {
@@ -215,14 +215,12 @@ local Templates = {
         BorderSizePixel = 0,
         FontFace = "Font",
         RichText = true,
-        TextColor3 = "FontColor",
     },
     TextButton = {
         AutoButtonColor = false,
         BorderSizePixel = 0,
         FontFace = "Font",
         RichText = true,
-        TextColor3 = "FontColor",
     },
     TextBox = {
         BorderSizePixel = 0,
@@ -232,7 +230,6 @@ local Templates = {
             return Color3.fromHSV(H, S, V / 2)
         end,
         Text = "",
-        TextColor3 = "FontColor",
     },
     UIListLayout = {
         SortOrder = Enum.SortOrder.LayoutOrder,
@@ -251,7 +248,7 @@ local Templates = {
         AutoShow = true,
         Center = true,
         Resizable = true,
-        CornerRadius = 4,
+        CornerRadius = 8,
         NotifySide = "Right",
         ShowCustomCursor = true,
         Font = Enum.Font.Code,
@@ -1064,6 +1061,14 @@ local function New(ClassName: string, Properties: { [string]: any }): any
     end
     FillInstance(Properties, Instance)
 
+    -- Auto-set TextColor3 for text elements if not explicitly set
+    if (ClassName == "TextLabel" or ClassName == "TextButton" or ClassName == "TextBox") and not Properties["TextColor3"] then
+        Instance.TextColor3 = Library.Scheme.FontColor
+        -- Register for theme updates
+        Library.Registry[Instance] = Library.Registry[Instance] or {}
+        Library.Registry[Instance].TextColor3 = "FontColor"
+    end
+
     if Properties["Parent"] and not Properties["ZIndex"] then
         pcall(function()
             Instance.ZIndex = Properties.Parent.ZIndex
@@ -1178,7 +1183,7 @@ do
     NotificationArea = New("Frame", {
         AnchorPoint = Vector2.new(1, 0),
         BackgroundTransparency = 1,
-        Position = UDim2.new(1, -6, 0, 6),
+        Position = UDim2.new(1, -10, 0.5, 0),
         Size = UDim2.new(0, 300, 1, -6),
         Parent = ScreenGui,
     })
@@ -5290,13 +5295,17 @@ do
             Position = UDim2.new(0, 12, 0, 1),
             Size = UDim2.new(1, -20, 0, 25),
             Text = Preview.Text,
-            TextColor3 = "FontColor",
             TextSize = 14,
             TextTransparency = 0.1,
             TextXAlignment = Enum.TextXAlignment.Left,
             FontFace = "Font",
             Parent = Holder,
         })
+        
+        -- Set TextColor3 directly to avoid string assignment error
+        TitleLabel.TextColor3 = Library.Scheme.FontColor
+        Library.Registry[TitleLabel] = Library.Registry[TitleLabel] or {}
+        Library.Registry[TitleLabel].TextColor3 = "FontColor"
 
         local TitleLine = New("Frame", {
             AnchorPoint = Vector2.new(0.5, 0),
@@ -6435,8 +6444,8 @@ function Library:CreateWindow(WindowInfo)
                     Size = UDim2.new(1, 0, 0, 1),
                 },
                 {
-                    Position = UDim2.fromScale(0.3, 0),
-                    Size = UDim2.new(0, 1, 1, -21),
+                    Position = UDim2.fromScale(0.25, 0),
+                    Size = UDim2.new(0, 1, 0, 48),
                 },
                 {
                     AnchorPoint = Vector2.new(0, 1),
@@ -6478,7 +6487,7 @@ function Library:CreateWindow(WindowInfo)
         --// Title
         local TitleHolder = New("Frame", {
             BackgroundTransparency = 1,
-            Size = UDim2.fromScale(0.3, 1),
+            Size = UDim2.fromScale(0.25, 1),
             Parent = TopBar,
         })
         New("UIListLayout", {
@@ -6515,8 +6524,8 @@ function Library:CreateWindow(WindowInfo)
         local RightWrapper = New("Frame", {
             BackgroundTransparency = 1,
             AnchorPoint = Vector2.new(0, 0.5),
-            Position = UDim2.new(0.3, 8, 0.5, 0),
-            Size = UDim2.new(0.7, -57, 1, -16),
+            Position = UDim2.new(0.25, 8, 0.5, 0),
+            Size = UDim2.new(0.75, -57, 1, -16),
             Parent = TopBar,
         })
 
@@ -6572,13 +6581,63 @@ function Library:CreateWindow(WindowInfo)
             Parent = CurrentTabInfo,
         })
 
-        SearchBox = New("TextBox", {
-            BackgroundColor3 = "MainColor",
-            PlaceholderText = "Search",
-            Size = UDim2.fromScale(1, 1),
-            TextScaled = true,
+        -- Create search container for animation on TopBar (where move icon was)
+        local SearchContainer = New("Frame", {
+            BackgroundTransparency = 1,
+            Position = UDim2.new(1, -300, 0, 0),
+            Size = UDim2.new(0, 300, 1, 0),
             Visible = not (WindowInfo.DisableSearch or false),
-            Parent = RightWrapper,
+            Parent = TopBar,
+        })
+
+        -- Create animated search icon button (positioned exactly where move icon was)
+        local SearchIconButton = New("TextButton", {
+            AnchorPoint = Vector2.new(1, 0.5),
+            BackgroundColor3 = "MainColor",
+            Position = UDim2.new(1, -10, 0.5, 0),
+            Size = UDim2.fromOffset(28, 28),
+            Text = "",
+            ZIndex = 2,
+            Parent = SearchContainer,
+        })
+        New("UICorner", {
+            CornerRadius = UDim.new(0, WindowInfo.CornerRadius),
+            Parent = SearchIconButton,
+        })
+        New("UIStroke", {
+            Color = "OutlineColor",
+            Parent = SearchIconButton,
+        })
+
+        -- Add search icon to button
+        local SearchIcon = Library:GetIcon("search")
+        if SearchIcon then
+            New("ImageLabel", {
+                AnchorPoint = Vector2.new(0.5, 0.5),
+                BackgroundTransparency = 1,
+                Image = SearchIcon.Url,
+                ImageColor3 = "FontColor",
+                ImageRectOffset = SearchIcon.ImageRectOffset,
+                ImageRectSize = SearchIcon.ImageRectSize,
+                Position = UDim2.fromScale(0.5, 0.5),
+                Size = UDim2.fromOffset(20, 20),
+                Parent = SearchIconButton,
+            })
+        end
+
+        -- Create the search textbox (hidden initially)
+        SearchBox = New("TextBox", {
+            AnchorPoint = Vector2.new(1, 0.5),
+            BackgroundColor3 = "MainColor",
+            PlaceholderText = "Search...",
+            Position = UDim2.fromScale(1, 0.5),
+            Size = UDim2.fromOffset(0, 40),
+            Text = "",
+            TextScaled = true,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            Visible = false,
+            ZIndex = 1,
+            Parent = SearchContainer,
         })
         New("UICorner", {
             CornerRadius = UDim.new(0, WindowInfo.CornerRadius),
@@ -6586,7 +6645,7 @@ function Library:CreateWindow(WindowInfo)
         })
         New("UIPadding", {
             PaddingBottom = UDim.new(0, 8),
-            PaddingLeft = UDim.new(0, 8),
+            PaddingLeft = UDim.new(0, 12),
             PaddingRight = UDim.new(0, 8),
             PaddingTop = UDim.new(0, 8),
             Parent = SearchBox,
@@ -6596,34 +6655,59 @@ function Library:CreateWindow(WindowInfo)
             Parent = SearchBox,
         })
 
-        local SearchIcon = Library:GetIcon("search")
-        if SearchIcon then
-            New("ImageLabel", {
-                Image = SearchIcon.Url,
-                ImageColor3 = "FontColor",
-                ImageRectOffset = SearchIcon.ImageRectOffset,
-                ImageRectSize = SearchIcon.ImageRectSize,
-                ImageTransparency = 0.5,
-                Size = UDim2.fromScale(1, 1),
-                SizeConstraint = Enum.SizeConstraint.RelativeYY,
-                Parent = SearchBox,
+        -- TextColor3 is now automatically handled by the New() function
+
+        -- Animation variables
+        local SearchExpanded = false
+
+        -- Expand search function
+        local function ExpandSearch()
+            if SearchExpanded then return end
+            SearchExpanded = true
+            
+            SearchBox.Visible = true
+            SearchIconButton.Visible = false
+            
+            local tween = TweenService:Create(SearchBox, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+                Size = UDim2.fromOffset(250, 40)
             })
+            tween:Play()
+            
+            tween.Completed:Connect(function()
+                SearchBox:CaptureFocus()
+            end)
         end
 
-        local MoveIcon = Library:GetIcon("move")
-        if MoveIcon then
-            New("ImageLabel", {
-                AnchorPoint = Vector2.new(1, 0.5),
-                Image = MoveIcon.Url,
-                ImageColor3 = "OutlineColor",
-                ImageRectOffset = MoveIcon.ImageRectOffset,
-                ImageRectSize = MoveIcon.ImageRectSize,
-                Position = UDim2.new(1, -10, 0.5, 0),
-                Size = UDim2.fromOffset(28, 28),
-                SizeConstraint = Enum.SizeConstraint.RelativeYY,
-                Parent = TopBar,
+        -- Collapse search function
+        local function CollapseSearch()
+            if not SearchExpanded then return end
+            SearchExpanded = false
+            
+            SearchBox:ReleaseFocus()
+            SearchBox.Text = ""
+            Library:UpdateSearch("")
+            
+            local tween = TweenService:Create(SearchBox, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+                Size = UDim2.fromOffset(0, 40)
             })
+            tween:Play()
+            
+            tween.Completed:Connect(function()
+                SearchBox.Visible = false
+                SearchIconButton.Visible = true
+            end)
         end
+
+        -- Connect events
+        SearchIconButton.MouseButton1Click:Connect(ExpandSearch)
+        
+        SearchBox.FocusLost:Connect(function()
+            if SearchBox.Text == "" then
+                CollapseSearch()
+            end
+        end)
+
+
 
         --// Bottom Bar \\--
         local BottomBar = New("Frame", {
@@ -6695,7 +6779,7 @@ function Library:CreateWindow(WindowInfo)
             CanvasSize = UDim2.fromScale(0, 0),
             Position = UDim2.fromOffset(0, 49),
             ScrollBarThickness = 0,
-            Size = UDim2.new(0.3, 0, 1, -70),
+            Size = UDim2.new(0.25, 0, 1, -70),
             Parent = MainFrame,
         })
 
@@ -6711,7 +6795,7 @@ function Library:CreateWindow(WindowInfo)
             end,
             Name = "Container",
             Position = UDim2.new(1, 0, 0, 49),
-            Size = UDim2.new(0.7, -1, 1, -70),
+            Size = UDim2.new(0.75, -1, 1, -70),
             Parent = MainFrame,
         })
 
