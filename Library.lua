@@ -6444,10 +6444,6 @@ function Library:CreateWindow(WindowInfo)
                     Size = UDim2.new(1, 0, 0, 1),
                 },
                 {
-                    Position = UDim2.fromScale(0.25, 0),
-                    Size = UDim2.new(0, 1, 0, 48),
-                },
-                {
                     AnchorPoint = Vector2.new(0, 1),
                     Position = UDim2.new(0, 0, 1, -20),
                     Size = UDim2.new(1, 0, 0, 1),
@@ -6484,10 +6480,12 @@ function Library:CreateWindow(WindowInfo)
         })
         Library:MakeDraggable(MainFrame, TopBar, false, true)
 
-        --// Title
+        --// Centered Title
         local TitleHolder = New("Frame", {
             BackgroundTransparency = 1,
-            Size = UDim2.fromScale(0.25, 1),
+            AnchorPoint = Vector2.new(0.5, 0.5),
+            Position = UDim2.fromScale(0.5, 0.5),
+            Size = UDim2.fromScale(0.4, 1),
             Parent = TopBar,
         })
         New("UIListLayout", {
@@ -6520,12 +6518,12 @@ function Library:CreateWindow(WindowInfo)
             Parent = TitleHolder,
         })
 
-        --// Top Right Bar
+        --// Top Right Bar (Search Area)
         local RightWrapper = New("Frame", {
             BackgroundTransparency = 1,
-            AnchorPoint = Vector2.new(0, 0.5),
-            Position = UDim2.new(0.25, 8, 0.5, 0),
-            Size = UDim2.new(0.75, -57, 1, -16),
+            AnchorPoint = Vector2.new(1, 0.5),
+            Position = UDim2.new(1, -10, 0.5, 0),
+            Size = UDim2.new(0, 300, 1, -16),
             Parent = TopBar,
         })
 
