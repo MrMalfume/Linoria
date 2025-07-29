@@ -6593,7 +6593,7 @@ function Library:CreateWindow(WindowInfo)
             AnchorPoint = Vector2.new(1, 0.5),
             BackgroundColor3 = "MainColor",
             Position = UDim2.new(1, -10, 0.5, 0),
-            Size = UDim2.fromOffset(28, 28),
+            Size = UDim2.fromOffset(24, 24),
             Text = "",
             ZIndex = 2,
             Parent = SearchContainer,
@@ -6618,7 +6618,7 @@ function Library:CreateWindow(WindowInfo)
                 ImageRectOffset = SearchIcon.ImageRectOffset,
                 ImageRectSize = SearchIcon.ImageRectSize,
                 Position = UDim2.fromScale(0.5, 0.5),
-                Size = UDim2.fromOffset(20, 20),
+                Size = UDim2.fromOffset(16, 16),
                 Parent = SearchIconButton,
             })
         end
@@ -6629,7 +6629,7 @@ function Library:CreateWindow(WindowInfo)
             BackgroundColor3 = "MainColor",
             PlaceholderText = "Search...",
             Position = UDim2.fromScale(1, 0.5),
-            Size = UDim2.fromOffset(0, 40),
+            Size = UDim2.fromOffset(0, 32),
             Text = "",
             TextScaled = true,
             TextXAlignment = Enum.TextXAlignment.Left,
@@ -6667,7 +6667,7 @@ function Library:CreateWindow(WindowInfo)
             SearchIconButton.Visible = false
             
             local tween = TweenService:Create(SearchBox, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
-                Size = UDim2.fromOffset(250, 40)
+                Size = UDim2.fromOffset(180, 32)
             })
             tween:Play()
             
@@ -6686,7 +6686,7 @@ function Library:CreateWindow(WindowInfo)
             Library:UpdateSearch("")
             
             local tween = TweenService:Create(SearchBox, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
-                Size = UDim2.fromOffset(0, 40)
+                Size = UDim2.fromOffset(0, 32)
             })
             tween:Play()
             
