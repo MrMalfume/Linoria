@@ -145,7 +145,7 @@ do
             return AssetData.Id
         end
 
-        local AssetID = `rbxassetid://{AssetData.RobloxId}`
+        local AssetID = "rbxassetid://" .. AssetData.RobloxId
 
         if getcustomasset then
             local Success, NewID = pcall(getcustomasset, AssetData.Path)
@@ -171,7 +171,7 @@ do
         end
 
         local URLPath = AssetPath:gsub("Obsidian/", "")
-        writefile(AssetPath, game:HttpGet(`{BaseURL}{URLPath}`))
+        writefile(AssetPath, game:HttpGet(BaseURL .. URLPath))
     end
 
     for _, Data in ObsidianImageManager.Assets do
@@ -245,7 +245,6 @@ local Templates = {
         Position = UDim2.fromOffset(6, 6),
         Size = UDim2.fromOffset(720, 600),
         IconSize = UDim2.fromOffset(30, 30),
-        Icon = nil, -- No default icon to avoid asset ID requirements
         AutoShow = true,
         Center = true,
         Resizable = true,
@@ -256,7 +255,7 @@ local Templates = {
         ToggleKeybind = Enum.KeyCode.RightControl,
         MobileButtonsSide = "Left",
         Loader = false,
-        LoaderIcon = nil, -- No default loader icon to avoid asset ID requirements
+        LoaderIcon = nil,
         LoaderDuration = 4.5,
     },
     Toggle = {
@@ -6206,7 +6205,7 @@ function Library:Notify(...)
     if Data.SoundId then
         local SoundId = Data.SoundId
         if typeof(SoundId) == "number" then
-            SoundId = `rbxassetid://{SoundId}`
+            SoundId = "rbxassetid://" .. SoundId
         end
 
         New("Sound", {
@@ -6289,11 +6288,6 @@ function Library:CreateLoader(IconId, Duration)
             IconFrame.ImageRectOffset = Icon.ImageRectOffset
             IconFrame.ImageRectSize = Icon.ImageRectSize
         end
-    else
-        -- If no icon provided, create a simple colored circle
-        IconFrame.Image = ""
-        IconFrame.BackgroundColor3 = Library.Scheme.AccentColor
-        IconFrame.BackgroundTransparency = 0
     end
     
     -- Apply accent color using theme registry
@@ -6303,12 +6297,14 @@ function Library:CreateLoader(IconId, Duration)
     Library.Registry[IconFrame].ImageColor3 = "AccentColor"
     IconFrame.ImageColor3 = Library.Scheme.AccentColor
 
-    local Vignette = New("Frame", {
+    local Vignette = New("ImageLabel", {
         Name = "Vignette",
         Parent = LoaderFrame,
         BackgroundTransparency = 1,
         BorderSizePixel = 0,
         Size = UDim2.new(1, 0, 1, 0),
+        Image = "rbxassetid://18720640102",
+        ImageTransparency = 1,
         AnchorPoint = Vector2.new(0.5, 0.5),
         Position = UDim2.fromScale(0.5, 0.5),
     })
@@ -6317,8 +6313,8 @@ function Library:CreateLoader(IconId, Duration)
     if not Library.Registry[Vignette] then
         Library.Registry[Vignette] = {}
     end
-    Library.Registry[Vignette].BackgroundColor3 = "AccentColor"
-    Vignette.BackgroundColor3 = Library.Scheme.AccentColor
+    Library.Registry[Vignette].ImageColor3 = "AccentColor"
+    Vignette.ImageColor3 = Library.Scheme.AccentColor
 
     -- Animate the loader
     TweenService:Create(LoaderFrame, TweenInfo.new(0.55, Enum.EasingStyle.Quint), {
@@ -6335,7 +6331,7 @@ function Library:CreateLoader(IconId, Duration)
 
         task.delay(0.25, function()
             TweenService:Create(Vignette, TweenInfo.new(5), {
-                BackgroundTransparency = 0.2
+                ImageTransparency = 0.2
             }):Play()
 
             task.wait(Duration or 4.5)
@@ -6354,7 +6350,7 @@ function Library:CreateLoader(IconId, Duration)
 
             task.delay(0.1, function()
                 TweenService:Create(Vignette, TweenInfo.new(1, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut), {
-                    BackgroundTransparency = 1
+                    ImageTransparency = 1
                 }):Play()
 
                 task.wait(0.2)
@@ -6501,21 +6497,11 @@ function Library:CreateWindow(WindowInfo)
         })
 
         if WindowInfo.Icon then
-            -- Only create icon if a valid image source is provided
-            local IconImage = nil
-            if tonumber(WindowInfo.Icon) then
-                IconImage = `rbxassetid://{WindowInfo.Icon}`
-            elseif WindowInfo.Icon ~= "" then
-                IconImage = WindowInfo.Icon
-            end
-            
-            if IconImage then
-                New("ImageLabel", {
-                    Image = IconImage,
-                    Size = WindowInfo.IconSize,
-                    Parent = TitleHolder,
-                })
-            end
+            New("ImageLabel", {
+                Image = if tonumber(WindowInfo.Icon) then "rbxassetid://" .. WindowInfo.Icon else WindowInfo.Icon,
+                Size = WindowInfo.IconSize,
+                Parent = TitleHolder,
+            })
         end
 
         local X = Library:GetTextBounds(
