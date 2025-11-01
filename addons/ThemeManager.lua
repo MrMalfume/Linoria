@@ -45,13 +45,13 @@ do
         ["Default"] = {
             1,
             httpService:JSONDecode(
-                [[{"FontColor":"ffffff","MainColor":"191919","AccentColor":"#55faff","BackgroundColor":"0f0f0f","OutlineColor":"282828"}]]
+                [[{"FontColor":"ffffff","MainColor":"191919","AccentColor":"7d55ff","BackgroundColor":"0f0f0f","OutlineColor":"282828"}]]
             ),
         },
         ["BBot"] = {
             2,
             httpService:JSONDecode(
-                [[{"FontColor":"ffffff","MainColor":"1e1e1e","AccentColor":"#55dbff","BackgroundColor":"232323","OutlineColor":"141414"}]]
+                [[{"FontColor":"ffffff","MainColor":"1e1e1e","AccentColor":"7e48a3","BackgroundColor":"232323","OutlineColor":"141414"}]]
             ),
         },
         ["Fatality"] = {
@@ -291,10 +291,10 @@ do
         local fields = { "FontColor", "MainColor", "AccentColor", "BackgroundColor", "OutlineColor" }
         for _, field in pairs(fields) do
             if typeof(theme[field]) == "Color3" then
-                FinalTheme[field] = `#{theme[field]:ToHex()}`
+                FinalTheme[field] = "#" .. theme[field]:ToHex()
                 LibraryScheme[field] = theme[field]
             elseif typeof(theme[field]) == "string" then
-                FinalTheme[field] = if theme[field]:sub(1, 1) == "#" then theme[field] else `#{theme[field]}`
+                FinalTheme[field] = if theme[field]:sub(1, 1) == "#" then theme[field] else ("#" .. theme[field])
                 LibraryScheme[field] = Color3.fromHex(theme[field])
             else
                 FinalTheme[field] = ThemeManager.BuiltInThemes["Default"][2][field]
@@ -397,7 +397,7 @@ do
         groupbox:AddLabel("Font color"):AddColorPicker("FontColor", { Default = self.Library.Scheme.FontColor })
         groupbox:AddDropdown("FontFace", {
             Text = "Font Face",
-            Default = "SourceSans",
+            Default = "Code",
             Values = { "BuilderSans", "Code", "Fantasy", "Gotham", "Jura", "Roboto", "RobotoMono", "SourceSans" },
         })
 
